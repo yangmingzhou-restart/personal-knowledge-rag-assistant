@@ -1,0 +1,16 @@
+.venv/
+.venv.DELETE_ME/
+__pycache__/
+.pytest_cache/
+*.pyc
+*.pyo
+*.sqlite
+*.sqlite3
+.env
+data/
+uploads/
+chroma/
+.vscode/
+个人知识点/
+test.ipynb
+tests/测试用文件/
