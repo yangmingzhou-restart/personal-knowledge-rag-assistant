@@ -1,5 +1,7 @@
 # Personal Knowledge RAG Assistant
 
+[![CI](https://github.com/yangmingzhou-restart/personal-knowledge-rag-assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/yangmingzhou-restart/personal-knowledge-rag-assistant/actions/workflows/ci.yml)
+
 ## What This Project Does
 
 A local FastAPI-based RAG assistant that can upload text-like files, parse content, split text into chunks, generate deterministic fake embeddings, retrieve relevant chunks, and return a deterministic answer stub with sources.
@@ -54,3 +56,6 @@ Open:
 '''text
 https://127.0.0.1:8000/docs
 '''
+
+
+
