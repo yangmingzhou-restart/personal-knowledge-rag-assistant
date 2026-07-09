@@ -25,6 +25,9 @@ jobs:
       - name: Prepare runtime data directory
         run: mkdir -p data
 
+      - name: Prepare database
+        run: PYTHONPATH=. python -c "from pathlib import Path; from app.storage import init_db; init_db(Path('data/app.sqlite3'))"
+
       - name: Run tests
         run: PYTHONPATH=. python -m pytest
 
