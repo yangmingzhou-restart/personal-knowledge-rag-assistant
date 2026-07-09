@@ -41,3 +41,16 @@ C:\Users\YangMingZhou\anaconda3\python.exe -m uvicorn app.main:app --reload
 ## Interview Summary
 
 This project demonstrates the core RAG pipeline with clear module boundaries, test coverage, and source-aware answer structure.
+
+## Run with Docker
+
+'''powershell
+docker build -t personal-knowledge-rag .
+docker run --rm -p 8000:8000 personal-knowledge-rag
+'''
+
+Open:
+
+'''text
+https://127.0.0.1:8000/docs
+'''

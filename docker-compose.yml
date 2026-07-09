@@ -1,0 +1,10 @@
+services:
+  rag-api:
+    build: .
+    image: personal-knowledge-rag:lastest
+    container_name: personal-knowledge-rag
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped

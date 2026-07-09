@@ -1,0 +1,14 @@
+__pycache__/
+.pytest_cache/
+.vscode/
+个人知识点/
+data/
+uploads/
+test.ipynb
+tests/测试用文件/
+.env/
+.venv/
+.venv.DELETE_ME/
+
+chroma/
+.git/

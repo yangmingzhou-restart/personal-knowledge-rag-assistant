@@ -79,3 +79,18 @@ Body:
 ```
 
 Check `answer`, `sources`, and `confidence_notes`.
+
+
+## 6. Docker Demo
+If you want to run the project in Docker, follow the steps below:
+
+'''powershell
+docker build -t personal-knowledge-rag .
+docker run --rm -p 8000:8000 personal-knowledge-rag
+'''
+
+Open:
+
+'''text
+https://127.0.0.1:8000/docs
+'''
