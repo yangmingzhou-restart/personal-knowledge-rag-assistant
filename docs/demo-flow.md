@@ -2,9 +2,39 @@
 
 ## 1. Start Server
 
+
+### Option A: Run Locally With Python
 ```powershell
 C:\Users\YangMingZhou\anaconda3\python.exe -m uvicorn app.main:app --reload
 ```
+
+
+### Option B: Run With Docker
+
+'''powershell
+docker build --pull=false -t personal-knowledge-rag .
+docker run --rmm -p 8000:8000 personal-knowledge-rag
+'''
+
+
+### Option C: Run With Docker Compose
+
+'''powershell
+docker compose up --build
+'''
+
+For background mode:
+
+'''powershell
+docker compose up --build -d
+'''
+
+Stop Service:
+
+'''powershell
+docker compose down
+'''
+
 
 Open: 
 
@@ -94,3 +124,4 @@ Open:
 '''text
 https://127.0.0.1:8000/docs
 '''
+
