@@ -29,5 +29,7 @@ jobs:
         run: PYTHONPATH=. python -c "from pathlib import Path; from app.storage import init_db; init_db(Path('data/app.sqlite3'))"
 
       - name: Run tests
+        env:
+          EMBEDDING_PROVIDER: fake
         run: PYTHONPATH=. python -m pytest
 
