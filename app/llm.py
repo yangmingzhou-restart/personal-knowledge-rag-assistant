@@ -5,6 +5,9 @@ from abc import ABC, abstractmethod
 # question + retrieved chunks -> build_grounded_prompt(...)
 # -> strict context block -> LLM answer grounded in sources
 
+class LLMProviderError(Exception):
+    """Raised when an LLM provider cannot generate a response safely."""
+
 class LLMClient(ABC):
     @abstractmethod
     def generate(self, prompt: str) -> dict[str, str]:
@@ -18,10 +21,19 @@ class FakeLLMClient(LLMClient):
             "provider": "fake",
         }
     
+class FakeFailingLLMClient(LLMClient):
+    def generate(self, prompt: str) -> dict[str, str]:
+        raise LLMProviderError("Fake LLM provider failed")
+
 def get_llm_client() -> LLMClient:
     provider = os.getenv("LLM_PROVIDER", "fake").lower()
     
     if provider == "fake":
         return FakeLLMClient()
+
+    if provider == "failing_fake":
+        return FakeFailingLLMClient()
     
-    raise ValueError(f"Unsupported LLM provider: {provider}")
+    raise LLMProviderError(f"Unsupported LLM provider: {provider}")
+
+

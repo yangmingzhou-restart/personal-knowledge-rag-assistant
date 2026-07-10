@@ -16,6 +16,7 @@ from app.storage import (
     insert_document,
     update_chunk_embedding,
 )
+from app.llm import LLMProviderError
 
 
 DATABASE_PATH = Path("data/app.sqlite3")
@@ -132,11 +133,13 @@ def answer(request: AnswerRequest) -> dict:
             top_k=request.top_k,
         )
     )
-
-    generated = build_llm_answer(
-        question=request.question,
-        matches=retrieval_payload["matches"],
-    )
+    try: 
+        generated = build_llm_answer(
+            question=request.question,
+            matches=retrieval_payload["matches"],
+        )
+    except LLMProviderError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
     return {
         "document_id": request.document_id,
