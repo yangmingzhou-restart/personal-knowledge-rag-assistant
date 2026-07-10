@@ -33,7 +33,7 @@ def test_upload_txt_file_returns_file_metadata():
     assert saved_chunks[0]["text"] == "hello rag"
     assert saved_chunks[0]["chunk_index"] == 0
     assert saved_chunks[0]["embedding"] is not None
-    assert len(saved_chunks[0]["embedding"]) == 16
+    assert len(saved_chunks[0]["embedding"]) == 512
     assert len(results) == 1
 
 

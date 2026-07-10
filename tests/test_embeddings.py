@@ -1,5 +1,20 @@
-from app.embeddings import embed_text, embed_chunks
-from app.embeddings import EmbeddingProvider, FakeEmbeddingProvider, get_embedding_provider
+from app.embeddings import (
+    DEFAULT_LOCAL_EMBEDDING_MODEL,
+    EmbeddingProvider,
+    FakeEmbeddingProvider,
+    LocalEmbeddingProvider,
+    embed_chunks,
+    embed_text,
+    get_embedding_provider,
+)
+
+
+class DummySentenceTransformer:
+    def __init__(self, model_name: str) -> None:
+        self.model_name = model_name
+
+    def encode(self, text: str, normalize_embeddings: bool = False):
+        return [0.1, 0.2, 0.3]
 
 def test_embed_text_returns_fixed_size_vector():
     vector = embed_text("hello rag", dimensions=8)
@@ -70,8 +85,48 @@ def test_fake_embedding_provider_embeds_chunks():
 
     assert embedded[0]["embedding"] == provider.embed_text("hello rag")
 
-def test_get_embedding_provider_returns_fake_provider_by_fault():
+def test_get_embedding_provider_returns_fake_provider_when_requested(monkeypatch):
+    monkeypatch.setenv("EMBEDDING_PROVIDER", "fake")
+
     provider = get_embedding_provider()
 
     assert isinstance(provider, FakeEmbeddingProvider)
     assert isinstance(provider, EmbeddingProvider)
+
+def test_get_embedding_provider_defaults_to_local(monkeypatch):
+    # The app should use the downloaded local BGE model unless fake is explicitly requested.
+    monkeypatch.delenv("EMBEDDING_PROVIDER", raising=False)
+    monkeypatch.setattr(
+        "app.embeddings.load_sentence_transformer",
+        lambda model_name: DummySentenceTransformer(model_name),
+    )
+
+    provider = get_embedding_provider()
+    
+    assert isinstance(provider, LocalEmbeddingProvider)
+    assert provider.model_name == DEFAULT_LOCAL_EMBEDDING_MODEL
+
+def test_get_embedding_provider_selects_local(monkeypatch):
+    monkeypatch.setenv("EMBEDDING_PROVIDER", "local")
+    monkeypatch.setenv("LOCAL_EMBEDDING_MODEL", r"D:\AI创业\AI模型\embedding-models\BAAI\bge-small-zh-v1.5")
+    monkeypatch.setattr(
+        "app.embeddings.load_sentence_transformer",
+        lambda model_name: DummySentenceTransformer(model_name),
+    )
+
+    provider = get_embedding_provider()
+
+    assert isinstance(provider, LocalEmbeddingProvider)
+    assert provider.model_name == r"D:\AI创业\AI模型\embedding-models\BAAI\bge-small-zh-v1.5"
+
+def test_local_embedding_provider_embed_text_uses_model(monkeypatch):
+    monkeypatch.setattr(
+        "app.embeddings.load_sentence_transformer",
+        lambda model_name: DummySentenceTransformer(model_name),
+    )
+    provider = LocalEmbeddingProvider(model_name="dummy-model")
+
+    vector = provider.embed_text("hello rag")
+
+    assert vector == [0.1, 0.2, 0.3]
+

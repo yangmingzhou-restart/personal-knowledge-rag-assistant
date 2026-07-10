@@ -1,4 +1,5 @@
 .venv/
+.env.example
 .venv.DELETE_ME/
 __pycache__/
 .pytest_cache/
