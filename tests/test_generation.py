@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
-from app.generation import build_answer_stub
+from app.generation import build_answer_stub, build_llm_answer
+from app.llm import FakeLLMClient
 from app.main import app
 
 
@@ -56,3 +57,27 @@ def test_answer_returns_stub_answer_with_sources():
     assert "answer" in payload
     assert len(payload["sources"]) >= 1
     assert "confidence_notes" in payload
+
+def test_build_llm_answer_uses_prompt_and_llm_client():
+    matches=[
+        {
+            "chunk_id": "chunk_1",
+            "document_id": "doc_1",
+            "chunk_index": 0,
+            "text": "RAG uses retrieved context.",
+            "score": 0.9,
+        }
+    ]
+
+    result = build_llm_answer(
+        question="What does RAG use?",
+        matches=matches,
+        llm_client=FakeLLMClient(),
+    )
+
+    assert "FAKE_ANSWER" in result["answer"]
+    assert "RAG uses retrieved context." in result["answer"]
+    assert result["provider"] == "fake"
+    assert result["sources"][0]["chunk_id"] == "chunk_1"
+    assert result["sources"][0]["score"] == 0.9
+    assert "grounded prompt" in result["confidence_notes"]

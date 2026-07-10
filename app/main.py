@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 from app.chunking import chunk_text
 from app.embeddings import get_embedding_provider
-from app.generation import build_answer_stub
+from app.generation import build_llm_answer
 from app.ingestion import UnsupportedFileTypeError, extract_text
 from app.retrieve import rank_chunks_by_similarity
 from app.storage import (
@@ -133,7 +133,7 @@ def answer(request: AnswerRequest) -> dict:
         )
     )
 
-    generated = build_answer_stub(
+    generated = build_llm_answer(
         question=request.question,
         matches=retrieval_payload["matches"],
     )
@@ -143,6 +143,7 @@ def answer(request: AnswerRequest) -> dict:
         "question": request.question,
         "top_k": request.top_k,
         "answer": generated["answer"],
+        "provider": generated["provider"],
         "sources": generated["sources"],
         "confidence_notes": generated["confidence_notes"],
     }

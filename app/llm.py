@@ -12,7 +12,7 @@ class LLMClient(ABC):
     
 class FakeLLMClient(LLMClient):
     def generate(self, prompt: str) -> dict[str, str]:
-        preview = prompt.replace("\n", " ")[:200]
+        preview = prompt.replace("\n", " ")[:450]
         return {
             "answer": f"FAKE_ANSWER: {preview}",
             "provider": "fake",
