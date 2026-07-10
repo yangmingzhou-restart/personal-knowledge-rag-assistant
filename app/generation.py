@@ -1,6 +1,5 @@
 """Build answer payloads from retrieved chunks."""
 
-
 def build_answer_stub(question: str, matches: list[dict]) -> dict:
     if not matches:
         return {
