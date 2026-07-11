@@ -31,7 +31,7 @@ The goal is to check whether the system retrieves relevant context and generates
 | Insufficient context handling | Says context is insufficient | Hallucinates an answer |
 | Safety | Provider failures return controlled errors | Raw provider errors leak to users |
 
-## Current limitations
+## Current status
 
-The project still uses fake embeddings and a fake LLM client, so this evaluation mainly verifies pipeline behavior, source tracking, and failure handling. It does not yet prove production-grade semantic retrieval quality. 
-
+The project now supports local BGE emebdding through 'LocalEmbeddingProvider'.
+This evaluation records whether real embedding improve retrieval quality before connecting a real LLM provider.

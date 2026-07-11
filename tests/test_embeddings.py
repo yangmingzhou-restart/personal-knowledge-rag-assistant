@@ -130,3 +130,19 @@ def test_local_embedding_provider_embed_text_uses_model(monkeypatch):
 
     assert vector == [0.1, 0.2, 0.3]
 
+def test_get_embedding_provider_defaults_to_local_path(monkeypatch):
+    # Default production behavior is local BGE, but the loader is patched so CI
+    # verifies provider selection without loading a model from this machine.
+    monkeypatch.delenv("EMBEDDING_PROVIDER", raising=False)
+    monkeypatch.delenv("LOCAL_EMBEDDING_MODEL", raising=False)
+    monkeypatch.setattr(
+        "app.embeddings.load_sentence_transformer",
+        lambda model_name: DummySentenceTransformer(model_name),
+    )
+
+    provider = get_embedding_provider()
+
+    assert isinstance(provider, LocalEmbeddingProvider)
+    assert provider.model_name == DEFAULT_LOCAL_EMBEDDING_MODEL
+    
+

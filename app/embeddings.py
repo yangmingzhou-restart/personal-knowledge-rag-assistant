@@ -4,7 +4,6 @@ import os
 
 DEFAULT_LOCAL_EMBEDDING_MODEL = r"D:\AI创业\AI模型\embedding-models\BAAI\bge-small-zh-v1.5"
 
-
 class EmbeddingProvider(ABC):
     @abstractmethod
     def embed_text(self, text: str) -> list[float]:
@@ -65,7 +64,8 @@ def get_embedding_provider() -> EmbeddingProvider:
     
     if provider == "fake":
         return FakeEmbeddingProvider()
-    elif provider == "local":
+    
+    if provider == "local":
         model_name = os.getenv(
             "LOCAL_EMBEDDING_MODEL",
             DEFAULT_LOCAL_EMBEDDING_MODEL,
