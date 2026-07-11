@@ -73,7 +73,7 @@ def get_embedding_provider() -> EmbeddingProvider:
         return LocalEmbeddingProvider(model_name=model_name)
      
     raise ValueError("Unsupported embedding provider")
-    
+
 
 def embed_text(text: str, dimensions: int = 16) -> list[float]:
     if dimensions <= 0:
