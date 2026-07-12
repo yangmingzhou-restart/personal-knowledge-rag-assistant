@@ -4,7 +4,6 @@ from app.generation import build_answer_stub, build_llm_answer
 from app.llm import FakeLLMClient
 from app.main import app
 
-
 def test_build_answer_stub_uses_retrieved_chunks():
     matches = [
         {

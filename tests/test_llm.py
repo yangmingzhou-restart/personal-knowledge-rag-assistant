@@ -1,5 +1,7 @@
 import pytest
 import httpx
+from app.config import settings
+
 
 from app.llm import (
                     FakeLLMClient, 
@@ -21,7 +23,7 @@ def test_fake_llm_client_returns_deterministic_answer():
     assert result["provider"] == "fake"
 
 def test_get_llm_client_default_to_fake(monkeypatch):
-    monkeypatch.setenv("LLM_PROVIDER", "fake")
+    monkeypatch.setattr(settings, "llm_provider", "fake")
 
     client = get_llm_client()
 
@@ -44,7 +46,7 @@ def test_fake_failing_llm_client_raises_provider_error():
         client.generate("hello")
     
 def test_get_llm_client_rejects_unsupported_provider(monkeypatch):
-    monkeypatch.setenv("LLM_PROVIDER", "unknown")
+    monkeypatch.setattr(settings, "llm_provider", "unknown")
 
     with pytest.raises(LLMProviderError):
         get_llm_client()

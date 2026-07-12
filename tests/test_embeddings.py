@@ -7,7 +7,7 @@ from app.embeddings import (
     embed_text,
     get_embedding_provider,
 )
-
+from app.config import settings
 
 class DummySentenceTransformer:
     def __init__(self, model_name: str) -> None:
@@ -86,7 +86,7 @@ def test_fake_embedding_provider_embeds_chunks():
     assert embedded[0]["embedding"] == provider.embed_text("hello rag")
 
 def test_get_embedding_provider_returns_fake_provider_when_requested(monkeypatch):
-    monkeypatch.setenv("EMBEDDING_PROVIDER", "fake")
+    monkeypatch.setattr(settings, "embedding_provider", "fake")
 
     provider = get_embedding_provider()
 

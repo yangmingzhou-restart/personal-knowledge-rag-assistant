@@ -1,13 +1,8 @@
 import hashlib
 from abc import ABC, abstractmethod
-import os
-from dotenv import load_dotenv
+from app.config import settings
 
-load_dotenv()
-DEFAULT_LOCAL_EMBEDDING_MODEL = os.getenv(
-    "LOCAL_EMBEDDING_MODEL",
-    r"D:\AI创业\AI模型\embedding-models\BAAI\bge-small-zh-v1.5",
-)
+DEFAULT_LOCAL_EMBEDDING_MODEL = settings.local_embedding_model
 
 class EmbeddingProvider(ABC):
     @abstractmethod
@@ -65,16 +60,13 @@ class FakeEmbeddingProvider(EmbeddingProvider):
 
 def get_embedding_provider() -> EmbeddingProvider:
     # Default is local BGE; set EMBEDDING_PROVIDER=fake only for tests/CI.
-    provider = os.getenv("EMBEDDING_PROVIDER", "local").lower()
+    provider = settings.embedding_provider.lower()
     
     if provider == "fake":
         return FakeEmbeddingProvider()
     
     if provider == "local":
-        model_name = os.getenv(
-            "LOCAL_EMBEDDING_MODEL",
-            DEFAULT_LOCAL_EMBEDDING_MODEL,
-        )
+        model_name = settings.local_embedding_model
         return LocalEmbeddingProvider(model_name=model_name)
      
     raise ValueError("Unsupported embedding provider")

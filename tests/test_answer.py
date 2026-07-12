@@ -1,10 +1,10 @@
 from fastapi.testclient import TestClient
-
 from app.main import app
+from app.config import settings
 
 def test_answer_returns_llm_answer_with_sources(monkeypatch):
-    monkeypatch.setenv("LLM_PROVIDER", "fake")
-
+    monkeypatch.setattr(settings, "llm_provider", "fake")
+    
     with TestClient(app) as client:
         upload_response = client.post(
             "/upload",
@@ -31,7 +31,7 @@ def test_answer_returns_llm_answer_with_sources(monkeypatch):
     assert len(payload["sources"]) >= 1
 
 def test_answer_returns_503_when_llm_provider_fails(monkeypatch):
-    monkeypatch.setenv("LLM_PROVIDER", "failing_fake")
+    monkeypatch.setattr(settings, "llm_provider", "failing_fake")
     
     with TestClient(app) as client:
         upload_response = client.post(

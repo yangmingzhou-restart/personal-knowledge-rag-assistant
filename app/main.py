@@ -1,7 +1,4 @@
 from pathlib import Path
-import os
-from dotenv import load_dotenv
-
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
@@ -19,10 +16,9 @@ from app.storage import (
     update_chunk_embedding,
 )
 from app.llm import LLMProviderError
+from app.config import settings
 
-load_dotenv()
-DATABASE_PATH = Path(os.getenv("DATABASE_PATH", "data/app.sqlite3"))
-
+DATABASE_PATH = settings.database_path
 class RetrievalRequest(BaseModel):
     document_id: str
     question: str

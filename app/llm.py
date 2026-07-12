@@ -1,9 +1,6 @@
-import os
 from abc import ABC, abstractmethod
 import httpx
-from dotenv import load_dotenv
-
-load_dotenv()
+from app.config import settings
 
 #RAG核心不只是“把资料塞给LLM”，而是让LLM知道：哪些是资料，哪些是问题，不能做什么，答案要如何引用来源。
 # question + retrieved chunks -> build_grounded_prompt(...)
@@ -68,7 +65,7 @@ class OllamaLLMClient(LLMClient):
 
 
 def get_llm_client() -> LLMClient:
-    provider = os.getenv("LLM_PROVIDER", "fake").lower()
+    provider = settings.llm_provider.lower()
     
     if provider == "fake":
         return FakeLLMClient()
@@ -78,8 +75,8 @@ def get_llm_client() -> LLMClient:
     
     if provider == "ollama":
         return OllamaLLMClient(
-            base_url=os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434"),
-            model=os.getenv("OLLAMA_MODEL", "qwen2.5:3b"),
+            base_url=settings.ollama_base_url,
+            model=settings.ollama_model,
         )
     
     raise LLMProviderError(f"Unsupported LLM provider: {provider}")
