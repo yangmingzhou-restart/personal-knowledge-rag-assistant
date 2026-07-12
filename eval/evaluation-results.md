@@ -37,9 +37,30 @@ no, the retrieved chunks indicates how the project test works.
 
 Judgment: pass / partial pass / fail
 
-partial pass
+pass
 
 Reason:
 
-top_k = 3, the top_1 retrieval is good, but the top_3 is not relevant with the question.
+top_k = 3. The top_1 retrieval is good, but the top_3 is not relevant with the question.
 Besides, the ranks is reasonanble, the top_1 is indeed the expected source.
+
+### Q2
+
+Question: What does the upload endpoint do?
+
+Expected source: Architecture
+
+Top-1 result: "# Personal Knowledge Sample\r\n\r\n## Project Goal\r\n\r\nThe Personal Knowledge RAG Assistant helps a user upload notes, split them into chunks, retrieve relevant context, and generate grounded answers.\r\n\r\n## Architecture\r\n\r\nThe upload endpoint extracts text, chunks the text, stores chunk metadata in SQLite, and writes fake embeddings for local similarity search.\r\n\r\n## Retrieval\r\n\r\nThe retrieval endpoint receives a document_id, question, and top_K. It embeds the question, compares it with stored chunk "
+
+Top-3 contains expected source: yes/no
+
+no, the retrieved chunks indicates how the project test works.
+"t project uses fake embeddings and a fake LLM client. This keeps tests stable but does not measure real semantic retrieval quality.\r\n",
+
+Judgment: pass / partial pass / fail
+
+pass
+
+Reason:
+
+top_k = 3. The top_1 retrieval contains the "Expected answer points"

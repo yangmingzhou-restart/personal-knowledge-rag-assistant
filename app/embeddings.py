@@ -1,8 +1,13 @@
 import hashlib
 from abc import ABC, abstractmethod
 import os
+from dotenv import load_dotenv
 
-DEFAULT_LOCAL_EMBEDDING_MODEL = r"D:\AI创业\AI模型\embedding-models\BAAI\bge-small-zh-v1.5"
+load_dotenv()
+DEFAULT_LOCAL_EMBEDDING_MODEL = os.getenv(
+    "LOCAL_EMBEDDING_MODEL",
+    r"D:\AI创业\AI模型\embedding-models\BAAI\bge-small-zh-v1.5",
+)
 
 class EmbeddingProvider(ABC):
     @abstractmethod

@@ -1,4 +1,5 @@
 .venv/
+.env
 .env.example
 .venv.DELETE_ME/
 __pycache__/
@@ -7,7 +8,6 @@ __pycache__/
 *.pyo
 *.sqlite
 *.sqlite3
-.env
 data/
 uploads/
 chroma/

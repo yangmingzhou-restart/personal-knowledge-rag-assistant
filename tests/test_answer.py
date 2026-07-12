@@ -2,7 +2,9 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 
-def test_answer_returns_llm_answer_with_sources():
+def test_answer_returns_llm_answer_with_sources(monkeypatch):
+    monkeypatch.setenv("LLM_PROVIDER", "fake")
+
     with TestClient(app) as client:
         upload_response = client.post(
             "/upload",

@@ -1,4 +1,6 @@
 from pathlib import Path
+import os
+from dotenv import load_dotenv
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from pydantic import BaseModel
@@ -18,21 +20,18 @@ from app.storage import (
 )
 from app.llm import LLMProviderError
 
-
-DATABASE_PATH = Path("data/app.sqlite3")
-
+load_dotenv()
+DATABASE_PATH = Path(os.getenv("DATABASE_PATH", "data/app.sqlite3"))
 
 class RetrievalRequest(BaseModel):
     document_id: str
     question: str
     top_k: int = 3
 
-
 class AnswerRequest(BaseModel):
     document_id: str
     question: str
     top_k: int = 3
-
 
 app = FastAPI(
     title="Personal Knowledge RAG Assistant",
