@@ -33,29 +33,63 @@ C:\Users\YangMingZhou\anaconda3\python.exe -m uvicorn app.main:app --reload
 3. `POST /retrieve`
 4. `POST /answer`
 
-## Known Limitations
-
-- Fake embeddings are not semantic embeddings.
-- Answer generation is a deterministic stub, not a real LLM.
-- No vector database yet.
-- No authentication or production deployment yet.
-
 ## Interview Summary
 
 This project demonstrates the core RAG pipeline with clear module boundaries, test coverage, and source-aware answer structure.
 
 ## Run with Docker
 
-'''powershell
+```powershell
 docker build -t personal-knowledge-rag .
 docker run --rm -p 8000:8000 personal-knowledge-rag
-'''
+```
 
 Open:
 
-'''text
+```text
 https://127.0.0.1:8000/docs
-'''
+```
 
+## Current Limitations
 
+- Embeddings are still stored in SQLite JSON, not a vector database.
+- PDF parsing is not implemented.
+- Local Ollma answer speend depends on laptop hardware.
+- Local BGE model is not optimized for performance.
+- Evaluation set is small and manual.
 
+## Current Features
+
+- Upload `.txt`, `.md`, and `.csv` files.
+- Split uploaded text into traceable chunks.
+- Store documents, chunks, and embeddings in SQLite.
+- Generate local BGE embeddings.
+- Retrieve top-k relevant chunks by cosine similarity.
+- Generate grounded answers through a local Ollama LLM provider.
+- Keep fake providers for tests and CI.
+
+## Local Demo Stack
+
+- API: FastAPI
+- Metadata and chunk storage: SQLite
+- Embedding model: BAAI/bge-base-zh-v1.5
+- LLM provider: Ollama
+- LLM model: qwen2.5:3b
+
+## Configuration
+
+Copy '.env.example' to '.env' and adjust local paths.
+
+```env
+EMBEDDING_PROVIDER=local
+LOCAL_EMBEDDING_MODEL=D:\AI创业\AI模型\embedding-models\BAAI\bge-small-zh-v1.5
+LLM_PROVIDER=ollama
+OLLAMA_BASE_URL=http://127.0.0.1:11434
+OLLAMA_MODEL=qwen2.5:3b
+```
+
+## Limitations
+
+- SQLite embedding search is acceptable for learning and demos but not a production vector database.
+- Local LLM speed depends on available CPU/GPU memory.
+- Current evaluation set is small and should be expanded before production claims.
