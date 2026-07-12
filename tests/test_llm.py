@@ -52,14 +52,14 @@ def test_get_llm_client_rejects_unsupported_provider(monkeypatch):
         get_llm_client()
 
 def test_get_llm_client_selects_ollama(monkeypatch):
-    monkeypatch.setenv("LLM_PROVIDER", "ollama")
-    monkeypatch.setenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
-    monkeypatch.setenv("OLLAMA_MODEL", "qwen2.5:3b")
+    monkeypatch.setattr(settings, "llm_provider", "ollama")
+    monkeypatch.setattr(settings, "ollama_base_url", "http://127.0.0.1:11434")
+    monkeypatch.setattr(settings, "ollama_model", "qwen2.5:3b")
 
     client = get_llm_client()
 
     assert isinstance(client, OllamaLLMClient)
-    assert client.model == "qwen2.5:3b"
+    assert client.model == settings.ollama_model
 
 def test_ollama_llm_client_generate_answer(monkeypatch):
     def fake_post(url, json, timeout):
@@ -73,6 +73,7 @@ def test_ollama_llm_client_generate_answer(monkeypatch):
                               request=request)
     
     monkeypatch.setattr(httpx, "post", fake_post)
+
     client = OllamaLLMClient(
         base_url="http://127.0.0.1:11434",
         model="qwen2.5:3b",

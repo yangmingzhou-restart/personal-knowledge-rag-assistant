@@ -2,8 +2,6 @@ import hashlib
 from abc import ABC, abstractmethod
 from app.config import settings
 
-DEFAULT_LOCAL_EMBEDDING_MODEL = settings.local_embedding_model
-
 class EmbeddingProvider(ABC):
     @abstractmethod
     def embed_text(self, text: str) -> list[float]:
@@ -23,7 +21,7 @@ def load_sentence_transformer(model_name: str):
 
 
 class LocalEmbeddingProvider(EmbeddingProvider):
-    def __init__(self, model_name: str = DEFAULT_LOCAL_EMBEDDING_MODEL) -> None:
+    def __init__(self, model_name: str = settings.local_embedding_model) -> None:
         # Keep model_name configurable so we can later switch to BAAI/bge-m3.
         self.model_name = model_name
         self.model = load_sentence_transformer(model_name)
