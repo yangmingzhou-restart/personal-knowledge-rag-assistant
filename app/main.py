@@ -6,15 +6,13 @@ from app.chunking import chunk_text
 from app.embeddings import get_embedding_provider
 from app.generation import build_llm_answer
 from app.ingestion import UnsupportedFileTypeError, extract_text
-from app.retrieve import rank_chunks_by_similarity
 from app.storage import (
-    get_chunks_by_document,
     get_document,
     init_db,
     insert_chunks,
     insert_document,
-    update_chunk_embedding,
 )
+from app.vector_store import SQLiteVectorStore
 from app.llm import LLMProviderError
 from app.config import settings
 
@@ -75,13 +73,9 @@ async def upload_file(file: UploadFile = File(...)) -> dict[str, str | int]:
 
     embedding_provider = get_embedding_provider()
     embedded_chunks = embedding_provider.embed_chunks(saved_chunks)
-    for chunk in embedded_chunks:
-        update_chunk_embedding(
-            db_path=DATABASE_PATH,
-            chunk_id=chunk["chunk_id"],
-            embedding=chunk["embedding"],
-        )
-
+    vector_store = SQLiteVectorStore(DATABASE_PATH)
+    vector_store.upsert_embedding(embedded_chunks)
+    
     return {
         "document_id": document["document_id"],
         "filename": document["filename"],
@@ -102,12 +96,12 @@ def retrieve(request: RetrievalRequest) -> dict:
     if request.top_k <= 0:
         raise HTTPException(status_code=400, detail="top_k must be greater than 0")
 
-    chunks = get_chunks_by_document(DATABASE_PATH, request.document_id)
     embedding_provider = get_embedding_provider()
     query_embedding = embedding_provider.embed_text(request.question)
-    matches = rank_chunks_by_similarity(
+    vector_store = SQLiteVectorStore(DATABASE_PATH)
+    matches = vector_store.search(
+        document_id=request.document_id,
         query_embedding=query_embedding,
-        chunks=chunks,
         top_k=request.top_k,
     )
 

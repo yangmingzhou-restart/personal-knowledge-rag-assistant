@@ -31,6 +31,8 @@ class VectorStore(ABC):
                         ...
                     },
                 ]
+        return: None
+                later calls update_chunk_embedding(), update embedding_json, finally save the embedding_json to embedding filed in database
         """
     
     @abstractmethod
