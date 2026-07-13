@@ -1,6 +1,20 @@
 
 
 def build_grounded_prompt(question: str, matches: list[dict]) -> str:
+    """
+    question: str, the question to answer
+    matches: list[dict], a list of top_k retrieved chunks, each chunk is a dict with chunk_id, chunk_index, score, text
+                [
+                    {
+                        "chunk_id": "123",
+                        "chunk_index": 0,
+                        "score": 0.8,
+                        "text": "The answer is 123."
+                    },
+                ]
+    return: str, the structured prompt to answer the question
+            contains Rules, Question, Context(from matches)
+    """
     context_blocks = []
 
     # 构建上下文块，每个块包含chunk_id、index、score和text

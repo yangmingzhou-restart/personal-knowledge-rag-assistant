@@ -10,8 +10,29 @@ class LLMProviderError(Exception):
     """Raised when an LLM provider cannot generate a response safely."""
 
 class LLMClient(ABC):
+    """
+    LLMClient abstract boundary.
+
+    Function:
+        Unify the interface of different LLM providers, so that 
+        we can switch switch between providers.
+    
+    Main methods:
+        generate(prompt): generate answer from prompt by LLM
+        
+    RAG process position:
+        in /answer, generating the answer with question and uploaded documents by LLM.
+    """
     @abstractmethod
     def generate(self, prompt: str) -> dict[str, str]:
+        """
+        prompt: str, the prompt to answer the question
+        return: dict[str, str], the answer from LLM provider
+            {
+                "answer": "LLM_generated_answer",
+                "provider": LLMClient,
+            }
+        """
         raise NotImplementedError
     
 class FakeLLMClient(LLMClient):
@@ -65,6 +86,9 @@ class OllamaLLMClient(LLMClient):
 
 
 def get_llm_client() -> LLMClient:
+    """
+    Get LLMClient instance based on the provider in settings of config.py.
+    """
     provider = settings.llm_provider.lower()
     
     if provider == "fake":

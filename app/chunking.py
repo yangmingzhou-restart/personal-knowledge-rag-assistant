@@ -1,4 +1,22 @@
 def chunk_text(text: str, chunk_size: int = 500, overlap: int = 50) -> list[dict]:
+    """
+    text: str,  输入的文本
+    chunk_size: int = 500,  每个chunk的字符数
+    overlap: int = 50,  每个chunk之间的重叠字符数
+
+    return: list[dict], 划分后的文本块
+            [
+                {
+                    "chunk_index": 0,
+                    "text": "Python RAG retrieval",
+                    "start_char": 0,
+                    "end_char": 500,
+                },
+                {
+                ...
+                }
+            ]
+    """
     if chunk_size <= 0:
         raise ValueError("chunk_size must be greater than 0")
     if overlap < 0:

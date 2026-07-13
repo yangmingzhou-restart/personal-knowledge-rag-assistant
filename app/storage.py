@@ -6,6 +6,11 @@ from uuid import uuid4
 
 
 def init_db(db_path: Path) -> None:
+    """
+    db_path: Path, 数据库路径
+
+    return: None. 初始化数据库，创建documents和chunks表
+    """
     db_path.parent.mkdir(parents=True, exist_ok=True)
 
     with sqlite3.connect(db_path) as conn:
@@ -46,6 +51,24 @@ def insert_document(
     size_bytes: int,
     status: str,
 ) -> dict[str, str | int]:
+    """
+    db_path: Path, 数据库路径
+    filename: str, 文档的文件名
+    extension: str, 文档的扩展名
+    size_bytes: int, 文档的大小（字节）
+    status: str, 文档的状态（如"received"、"processed"等）
+
+    return: dict[str, str | int], 
+            文档的详细信息，包含文档id、文件名、扩展名、大小、状态、创建时间等
+            {
+                "document_id": "doc_1234567890",
+                "filename": "example.pdf",
+                "extension": "pdf",
+                "size_bytes": 1024,
+                "status": "received",
+                "created_at": "2023-01-01T00:00:00+00:00",
+            }
+    """    
     document = {
         "document_id": f"doc_{uuid4().hex[:12]}",
         "filename": filename,
@@ -82,6 +105,22 @@ def insert_document(
 
 
 def get_document(db_path: Path, document_id: str) -> dict[str, str | int] | None:
+    """
+    db_path: Path, 数据库路径
+    document_id: str, 要查找的文档id
+
+    return: dict[str, str | int] | None, 
+            文档信息或None。该文档对应的第一条数据,最在于验证这个文档在于验证这个文档是否存在于数据库中
+            如果返回None，则API层抛出404错误码，提示文档不存在
+            {
+                "document_id": "doc_1234567890",
+                "filename": "example.pdf",
+                "extension": "pdf",
+                "size_bytes": 1024,
+                "status": "received",
+                "created_at": "2023-01-01T00:00:00+00:00",
+            }
+    """
     with sqlite3.connect(db_path) as conn:
         conn.row_factory = sqlite3.Row
         row = conn.execute(
@@ -110,6 +149,31 @@ def insert_chunks(
     document_id: str,
     chunks: list[dict[str, str | int]],
 ) -> list[dict[str, str | int]]:
+    """
+    db_path: Path, 数据库路径
+    document_id: str, 要插入的文档id
+    chunks: list[dict[str, str | int]], 要插入的chunk列表
+            {
+                "chunk_index": 0,
+                "text": "Hello, world!",
+                "start_char": 0,
+                "end_char": 11,
+            }
+
+    return: list[dict[str, str | int]], 
+            一个chunks，包含所有插入的chunk
+            [
+                {
+                    "chunk_id": "chunk_1234567890",
+                    "document_id": "doc_1234567890",
+                    "chunk_index": 0,
+                    "text": "Hello, world!",
+                    "start_char": 0,
+                    "end_char": 11,
+                    "created_at": "2023-01-01T00:00:00+00:00",
+                }
+            ]
+    """
     inserted = []
     created_at = datetime.now(UTC).isoformat()
 
@@ -156,6 +220,25 @@ def get_chunks_by_document(
     db_path: Path,
     document_id: str,
 ) -> list[dict[str, str | int]]:
+    """
+    db_path: Path, 数据库路径
+    document_id: str, 要查找的文档id
+
+    return: list[dict[str, str | int]], 
+            一个chunks，包含所有源于该文档的chunk
+            [
+                {
+                    "chunk_id": "chunk_1234567890",
+                    "document_id": "doc_1234567890",
+                    "chunk_index": 0,
+                    "text": "Hello, world!",
+                    "start_char": 0,
+                    "end_char": 11,
+                    "created_at": "2023-01-01T00:00:00+00:00",
+                    "embedding": None,
+                }
+            ]
+    """
     with sqlite3.connect(db_path) as conn:
         conn.row_factory = sqlite3.Row
         rows = conn.execute(
@@ -194,6 +277,16 @@ def update_chunk_embedding(
     chunk_id: str,
     embedding: list[float],
 ) -> None:
+    """
+    db_path: Path, 数据库路径
+    chunk_id: str, 要更新的chunkid
+    embedding: list[float], 要更新的chunk的embedding
+               [0.79, 0.34, 0.3, ...]
+
+    return: None. 
+    作用：把 embedding 序列化为 JSON 字符串，写入 chunks.embedding_json。
+    后续 get_chunks_by_document() 会再把 embedding_json 解析回 list[float]。
+    """
     with sqlite3.connect(db_path) as conn:
         conn.execute(
             """

@@ -1,7 +1,13 @@
 import math
 
-
 def cosine_similarity(left: list[float], right: list[float]) -> float:
+    """
+    left: list[float], the left vector
+            [0.1, 0.2, 0.3, ...]
+    right: list[float], the right vector
+    
+    return: float, the cosine similarity between left and right
+    """
     if len(left) != len(right):
         raise ValueError("Vectors must have the same length")
     if not right:
@@ -22,6 +28,27 @@ def rank_chunks_by_similarity(
     chunks: list[dict],
     top_k: int = 3,
 ) -> list[dict]:
+    """
+    query_embedding: list[float], the query vector
+    chunks: list[dict], a list of chunks, each chunk is a dict with chunk_id and embedding
+                [
+                    {
+                        "chunk_id": "123",
+                        "embedding": [0.1, 0.2, 0.3],
+                        ...
+                    },
+                ]
+    top_k: int, return the top_k chunks with highest similarity
+    
+    return: list[dict], a list of chunks, each chunk is a dict with chunk_id and score
+                [
+                    {
+                        "chunk_id": "123",
+                        "score": 0.8,
+                        ...
+                    },
+                ]
+    """
     if top_k <= 0:
         raise ValueError("top_k must be greater than 0")
 

@@ -5,11 +5,33 @@ from app.retrieve import rank_chunks_by_similarity
 from app.storage import get_chunks_by_document, update_chunk_embedding
 
 class VectorStore(ABC):
-    """向量库边界：上层只依赖这个接口，不关心底层是SQLite还是Qdrants."""
+    """
+    VectorStore abstract boundary.
+
+    Functions:
+        store and retrieve relevant chunks with query embeddings, 
+        and do not need to concern the details of the vector database.
+
+    Main methods:
+        upsert_embedding(chunks): save chunk embedding; if chunk already exist, update its embedding.
+        search(document_id, query_embedding, top_k): search chunks by query embedding, retrieve the top_k chunks in document_id.
+    
+    RAG process position:
+        When saving or updating chunk embedding, and when retrieving chunks by query embedding.
+    """
     
     @abstractmethod
     def upsert_embedding(self, chunks: list[dict]) -> None:
-        """保存chunk embedding; 如果chunk已经存在，则更新对应的embedding。"""
+        """
+        chunks: list[dict], a list of chunks, each chunk is a dict with chunk_id and embedding
+                [
+                    {
+                        "chunk_id": "123",
+                        "embedding": [0.1, 0.2, 0.3],
+                        ...
+                    },
+                ]
+        """
     
     @abstractmethod
     def search(
@@ -18,7 +40,20 @@ class VectorStore(ABC):
         query_embedding: list[float],
         top_k: int,
         ) -> list[dict]:
-        """根据query emedding返回最相似的chunks"""
+        """
+        document_id: str, 要查找的文档id
+        query_embedding: list[float], 待查询向量
+        top_k: int, 返回的相似度最高的k个chunk
+
+        return: list[dict], 一个chunks，包含相似度最高的top_k个chunk
+                [
+                    {
+                        "chunk_id": "123",
+                        "embedding": [0.1, 0.2, 0.3],
+                        ...
+                    },
+                ]
+        """
     
 
 class SQLiteVectorStore(VectorStore):
