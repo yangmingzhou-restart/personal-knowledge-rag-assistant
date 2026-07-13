@@ -1,6 +1,7 @@
 import pytest
 
-from app.vector_store import SQLiteVectorStore
+from app.vector_store import SQLiteVectorStore, get_vector_store
+from app.config import settings
 
 def test_sqlite_vector_store_upserts_embeddings(monkeypatch, tmp_path):
     calls = []
@@ -76,3 +77,20 @@ def test_sqlite_vector_store_search_ranks_chunks(monkeypatch, tmp_path):
     assert len(matches) == 1
     assert matches[0]["chunk_id"] == "chunk_1"
     assert matches[0]["score"] == 1.0
+
+def test_get_vector_store_defaults_to_sqlite(monkeypatch):
+    monkeypatch.setattr(settings, "vector_store_provider", "sqlite")
+    
+    vector_store = get_vector_store()
+    
+    assert isinstance(vector_store, SQLiteVectorStore)
+
+def test_get_vector_store_rejects_unknown_provider(monkeypatch):
+    monkeypatch.setattr(settings, "vector_store_provider", "unknown")
+
+    try:
+        get_vector_store()
+    except ValueError as exc:
+        assert "Unsupported vector store provider: unknown" in str(exc)
+    else:
+        raise AssertionError("Expected ValueError")

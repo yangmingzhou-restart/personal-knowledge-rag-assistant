@@ -12,7 +12,7 @@ from app.storage import (
     insert_chunks,
     insert_document,
 )
-from app.vector_store import SQLiteVectorStore
+from app.vector_store import get_vector_store
 from app.llm import LLMProviderError
 from app.config import settings
 
@@ -73,7 +73,7 @@ async def upload_file(file: UploadFile = File(...)) -> dict[str, str | int]:
 
     embedding_provider = get_embedding_provider()
     embedded_chunks = embedding_provider.embed_chunks(saved_chunks)
-    vector_store = SQLiteVectorStore(DATABASE_PATH)
+    vector_store = get_vector_store()
     vector_store.upsert_embedding(embedded_chunks)
     
     return {
@@ -98,7 +98,7 @@ def retrieve(request: RetrievalRequest) -> dict:
 
     embedding_provider = get_embedding_provider()
     query_embedding = embedding_provider.embed_text(request.question)
-    vector_store = SQLiteVectorStore(DATABASE_PATH)
+    vector_store = get_vector_store()
     matches = vector_store.search(
         document_id=request.document_id,
         query_embedding=query_embedding,

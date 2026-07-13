@@ -3,6 +3,7 @@ from pathlib import Path
 
 from app.retrieve import rank_chunks_by_similarity
 from app.storage import get_chunks_by_document, update_chunk_embedding
+from app.config import settings
 
 class VectorStore(ABC):
     """
@@ -100,3 +101,18 @@ class SQLiteVectorStore(VectorStore):
             chunks=chunks,
             top_k=top_k,
         )
+
+def get_vector_store() -> VectorStore:
+    """
+    return: VectorStore, selected by settings.vector_store_provider.
+            Default is SQLiteVectorStore for local development and CI.
+
+    RAG process position:
+        Used by upload and retrieve flows when they need to persist or search embeddings.
+    """
+    provider = settings.vector_store_provider.lower()
+
+    if provider == "sqlite":
+        return SQLiteVectorStore(db_path=settings.database_path)
+    
+    raise ValueError(f"Unsupported vector store provider: {provider}")
