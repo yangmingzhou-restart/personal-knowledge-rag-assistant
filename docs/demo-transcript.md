@@ -2,10 +2,10 @@
 
 ## Environment
 
-- Embedding provider: local BGE 
-- Embedding model: BAAI\bge-small-zh-v1.5
+- Embedding provider: local BGE
+- Embedding model: `BAAI/bge-small-zh-v1.5`
 - LLM provider: Ollama
-- LLM model: qwen2.5:3b
+- LLM model: `qwen2.5:3b`
 - API port: 8000
 
 ## Step 1: Health Check
@@ -38,7 +38,7 @@ Uploaded file:
 eval/sample-personal-konwledge.md
 ```
 
-Response:
+Example response:
 
 ```json
 {
@@ -50,22 +50,23 @@ Response:
 }
 ```
 
-## Step 3: Retrivev
+## Step 3: Retrieve
 
 Request:
 
 ```json
 {
   "document_id": "doc_2ebe4beb3963",
-  "question": "What is the goal of this assistant?",
+  "question": "What does the upload endpoint do?",
   "top_k": 3
 }
 ```
 
-Response notes:
+Expected checks:
 
-- Top result should mention project goal.
+- Top matches should mention text extraction, chunking, metadata storage, or embeddings.
 - Scores are cosine similarity over stored chunk embeddings.
+- Inspect retrieval before judging the final answer quality.
 
 ## Step 4: Answer
 
@@ -79,19 +80,23 @@ Request:
 }
 ```
 
-Response notes:
+Expected checks:
 
-- `sources` should include "extract text", "chunk text".
-- Answer should stay grounded in uploaded document context.
+- `provider` should be `ollama:qwen2.5:3b` in local Ollama mode.
+- `sources` should include retrieved chunk ids.
+- The answer should stay grounded in uploaded document context.
 
-### Answer:
-The upload endpoint extracts text, chunks the text, stores chunk metadata in SQLite, and writes fake embeddings for local similarity search.\n\nSource chunk_id: chunk_c333859126c4
-(Note: chunk_c333859126c4 is the top_1 chunk in the retrieval results.  In prompts.py, I ruled that "Mention the source chunk_id when useful.", so it mention the chunk in the answer.")
+Example answer summary:
+
+```text
+The upload endpoint extracts text from the uploaded file, splits the text into chunks, stores document and chunk metadata in SQLite, and writes embeddings for retrieval.
+```
 
 ## Current Limitations
 
-- Embeddings are still stored in SQLite JSON, not a vector database.
-- PDF parsing is not implemented.
-- Local Ollma answer speend depends on laptop hardware.
-- Local BGE model is not optimized for performance.
-- Evaluation set is small and manual.
+- Embeddings are stored in SQLite JSON, not a dedicated vector database.
+- Retrieval evaluation is still small and manual.
+- The current retrieval stage does not include reranking.
+- PDF and Word parsing are not fully implemented.
+- The project is single-user and does not include authentication or user-level data isolation.
+- Local LLM performance depends on laptop hardware.
