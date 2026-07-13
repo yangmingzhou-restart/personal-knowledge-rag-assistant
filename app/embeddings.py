@@ -101,22 +101,31 @@ class FakeEmbeddingProvider(EmbeddingProvider):
     ) -> list[dict[str, str | int | list[float]]]:
         return embed_chunks(chunks, dimensions=self.dimensions)
 
+_embedding_provider_cache: EmbeddingProvider | None = None # Cache the embedding provider instance
 def get_embedding_provider() -> EmbeddingProvider:
     """
     return: EmbeddingProvider, the embedding provider instance
             the model depends on the settings.embedding_provider
     """
     # Default is local BGE; set EMBEDDING_PROVIDER=fake only for tests/CI.
+    global _embedding_provider_cache
+
+    if _embedding_provider_cache is not None:
+        return _embedding_provider_cache
+    
     provider = settings.embedding_provider.lower()
     
     if provider == "fake":
-        return FakeEmbeddingProvider()
+        _embedding_provider_cache = FakeEmbeddingProvider()
+        return _embedding_provider_cache
     
     if provider == "local":
-        model_name = settings.local_embedding_model
-        return LocalEmbeddingProvider(model_name=model_name)
-     
-    raise ValueError("Unsupported embedding provider")
+        _embedding_provider_cache = LocalEmbeddingProvider(
+            model_name=settings.local_embedding_model
+        )
+        return _embedding_provider_cache
+        
+    raise ValueError(f"Unsupported embedding provider: {provider}")
 
 
 def embed_text(text: str, dimensions: int = 16) -> list[float]:
@@ -158,3 +167,12 @@ def embed_chunks(
         embedded.append(row)
 
     return embedded
+
+def reset_embedding_provider_cache() -> None:
+    """
+    Clear the embedding provider cache
+
+    when monkeypatch setattr(), the cache should be cleared.
+    """
+    global _embedding_provider_cache
+    _embedding_provider_cache = None
