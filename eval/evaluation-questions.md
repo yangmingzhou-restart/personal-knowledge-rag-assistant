@@ -20,7 +20,7 @@ For each question, record the actual result in `eval/evaluation-results.md`.
 
 ### Q1 - Project purpose
 
-- Question: What is the main purpose of the Personal Knowledge RAG Assistant?
+- Question: What is the  main purpose of the Personal Knowledge RAG Assistant?
 - Expected anchor: `[ANCHOR-PROJECT-PURPOSE]`
 - Expected evidence:
   - upload personal notes

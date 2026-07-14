@@ -94,3 +94,30 @@ Top k: 3
 ### Next Experiment
 
 - Use this baseline to compare the rerank results. Focus first on partial cases, because the correct evidence is already retrieved but ranked too low.
+
+## Root Cause Analysis
+
+- The `/retrieve` API path is working: it embeds the query, asks the vector store for chunks, computes cosine similarity, and sorts by score descending.
+- The current failures are retrieval-quality failures, not endpoint crashes.
+- Fixed character chunking can split a section boundary. Some chunks start in the previous section and only later contain the expected anchor, so the evaluation script may label the chunk as `unknown / no anchor`.
+- BGE embedding search can be pulled toward broad project-purpose text when the question uses general words such as project, provider, handle, or useful.
+- Some expected evidence is retrieved but attached to a neighboring anchor because the sample document crosses chunk boundaries.
+- `top_k=3` is sometimes too small for this baseline. In diagnostics, several expected chunks appeared around top-4 or top-5.
+
+## Optimization Plan
+
+1. Improve evaluation anchor detection before judging rerank quality.
+   - Current judgment extracts only one anchor from a returned chunk.
+   - Better judgment should collect all anchors inside each chunk and check whether the expected anchor appears anywhere in top-k evidence.
+2. Keep this baseline as the comparison point for rerank.
+   - Partial cases are the first rerank target because the correct evidence is already retrieved but ranked too low.
+3. Use rerank to reorder a wider candidate set.
+   - Retrieve more candidates first, such as top-10.
+   - Let the reranker reorder candidates against the user question.
+   - Return the final top-k after rerank.
+4. Improve chunking later if needed.
+   - The current fixed character splitter is simple and testable.
+   - A future splitter can prefer headings, paragraphs, or markdown sections so anchors and evidence stay together.
+5. Treat Qdrant and metadata filters as later retrieval infrastructure steps.
+   - Qdrant improves vector-store realism and scalability.
+   - Metadata filters solve multi-document search boundaries, not the current single-document ranking weakness.
