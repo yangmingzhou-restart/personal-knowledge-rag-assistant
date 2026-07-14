@@ -28,11 +28,14 @@ This baseline should be run before changing rerank, Qdrant, metadata filters, or
 
 ## Status Definitions
 
-- `pass`: the expected evidence is ranked first.
-- `partial`: the expected evidence appears in top-k, but not first.
-- `fail`: the expected evidence does not appear in top-k.
+A returned chunk can contain multiple anchors because fixed-size chunking may cross markdown section boundaries.
 
-For anchor-based evaluation, a chunk may contain more than one anchor because fixed character chunking can cross section boundaries. Therefore evaluation should eventually check all anchors inside a returned chunk, not only the first anchor.
+The evaluation script should:
+
+1. extract all anchors from each returned chunk;
+2. treat top-1 as pass when the first returned chunk contains the expected anchor;
+3. treat top-k as partial when a later returned chunk contains the expected anchor;
+4. treat it as fail only when the expected anchor is absent from all returned chunks.
 
 ## Failure Types
 

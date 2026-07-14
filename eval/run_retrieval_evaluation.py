@@ -71,23 +71,27 @@ def parse_evaluation_questions(path: Path) -> list[dict[str, str]]:
     ]
 
 
-def extract_anchor(text: str) -> str:
+def extract_anchors_from_text(text: str) -> list[str]:
     """
     text: str, returned chunk text.
 
-    return: str, the first anchor label in the chunk, or UNKNOWN_ANCHOR.
+    return: list[str], all anchor labels in the chunk.
+            If the chunk has no anchor, return [UNKNOWN_ANCHOR].
     """
-    match = ANCHOR_PATTERN.search(text)
-    return match.group(0) if match else UNKNOWN_ANCHOR
+    matches = ANCHOR_PATTERN.findall(text)
+    return matches if matches else [UNKNOWN_ANCHOR]
 
 
-def extract_anchors(matches: list[dict[str, Any]]) -> list[str]:
+def extract_anchor_groups(matches: list[dict[str, Any]]) -> list[list[str]]:
     """
     matches: list[dict[str, Any]], /retrieve matches.
 
-    return: list[str], anchors extracted from returned chunks in ranking order.
+    return: list[list[str]], anchors grouped by returned chunk in ranking order.
     """
-    return [extract_anchor(str(match.get("text", ""))) for match in matches]
+    return [
+        extract_anchors_from_text(str(match.get("text", "")))
+        for match in matches
+    ]
 
 
 def summarize_evidence(match: dict[str, Any], max_length: int = 140) -> str:
@@ -100,19 +104,24 @@ def summarize_evidence(match: dict[str, Any], max_length: int = 140) -> str:
     return text[:max_length]
 
 
-def judge(expected_anchor: str, top_anchors: list[str]) -> str:
+def judge(expected_anchor: str, anchor_groups: list[list[str]]) -> str:
     """
     expected_anchor: str, target anchor from evaluation-questions.md.
-    top_anchors: list[str], anchors returned by /retrieve in ranking order.
+    anchor_groups: list[list[str]], anchors returned by /retrieve in ranking order.
 
     return: str, pass / partial / fail.
     """
-    if not top_anchors:
+    if not anchor_groups:
         return "fail"
-    if top_anchors[0] == expected_anchor:
+    
+    # pass: the first returned chunk contains the expected anchor
+    if expected_anchor in anchor_groups[0]:
         return "pass"
-    if expected_anchor in top_anchors:
+    
+    # partial: the expected anchor appears in any of the returned chunks
+    if any(expected_anchor in anchors for anchors in anchor_groups[1:]):
         return "partial"
+    
     return "fail"
 
 
@@ -176,18 +185,24 @@ def run_retrieval_evaluation(
         response.raise_for_status()
 
         matches = response.json()["matches"]
-        top_anchors = extract_anchors(matches)
-        top_1 = matches[0] if matches else {} # current question top-1 match
-        status = judge(item["expected_anchor"], top_anchors)
+        anchor_groups = extract_anchor_groups(matches)
+        top_1 = matches[0] if matches else {}
+        status = judge(item["expected_anchor"], anchor_groups)
 
         rows.append(
             {
                 "id": item["id"],
                 "question": item["question"],
                 "expected_anchor": item["expected_anchor"],
-                "top_1_anchor": top_anchors[0] if top_anchors else UNKNOWN_ANCHOR,
+                "top_1_anchor": (
+                    ", ".join(anchor_groups[0])
+                    if anchor_groups
+                    else UNKNOWN_ANCHOR
+                ),
                 "top_1_evidence": summarize_evidence(top_1),
-                "top_3_anchors": ", ".join(top_anchors),
+                "top_3_anchors": " ; ".join(
+                    ", ".join(group) for group in anchor_groups
+                ),
                 "status": status,
                 "notes": "",
             }
