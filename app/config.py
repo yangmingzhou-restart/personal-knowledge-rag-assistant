@@ -8,7 +8,7 @@ class Settings(BaseSettings):
 
     # Database configuration
     database_path: Path = Path("data/app.sqlite3")
-    vector_store_provider: str = "sqlite"
+    vector_store_provider: str = "sqlite" # qdrant
     
     # Embedding configuration
     embedding_provider: str = "fake"
