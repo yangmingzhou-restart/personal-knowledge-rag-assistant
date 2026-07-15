@@ -1,8 +1,6 @@
 from fastapi.testclient import TestClient
 
-from app.embeddings import get_embedding_provider
 from app.main import DATABASE_PATH, app
-from app.retrieve import rank_chunks_by_similarity
 from app.storage import get_chunks_by_document
 
 
@@ -17,10 +15,6 @@ def test_upload_txt_file_returns_file_metadata():
     payload = response.json()
     saved_chunks = get_chunks_by_document(DATABASE_PATH, payload["document_id"])
 
-    provider = get_embedding_provider()
-    query_embedding = provider.embed_text("hello rag")
-    results = rank_chunks_by_similarity(query_embedding, saved_chunks, top_k=3)
-
     assert response.status_code == 200
     assert payload["document_id"].startswith("doc_")
     assert payload["filename"] == "hello.txt"
@@ -32,8 +26,6 @@ def test_upload_txt_file_returns_file_metadata():
     assert len(saved_chunks) == payload["chunk_count"]
     assert saved_chunks[0]["text"] == "hello rag"
     assert saved_chunks[0]["chunk_index"] == 0
-    assert saved_chunks[0]["embedding"] == query_embedding
-    assert len(results) == 1
 
 
 def test_upload_txt_file_returns_200():

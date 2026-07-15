@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     local_embedding_model: str = (
         r"D:\AI创业\AI模型\embedding-models\BAAI\bge-small-zh-v1.5"
     )
+
+    # Vector store configuration
+    qdrant_url: str = "http://127.0.0.1:6333"
+    qdrant_collection: str = "personal_knowlegde_chunks"
     
     # LLM configuration
     llm_provider: str = "fake"

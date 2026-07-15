@@ -14,7 +14,9 @@ from app.storage import (
 )
 from app.vector_store import get_vector_store
 from app.llm import LLMProviderError
+from app.rerank import get_reranker
 from app.config import settings
+
 
 DATABASE_PATH = settings.database_path
 class RetrievalRequest(BaseModel):
@@ -99,12 +101,21 @@ def retrieve(request: RetrievalRequest) -> dict:
     embedding_provider = get_embedding_provider()
     query_embedding = embedding_provider.embed_text(request.question)
     vector_store = get_vector_store()
-    matches = vector_store.search(
+
+    candidates_k = max(request.top_k*3, 10) # top_k -> candidate_k
+    candidates = vector_store.search(
         document_id=request.document_id,
         query_embedding=query_embedding,
+        top_k=candidates_k,
+    )
+    
+    reranker = get_reranker()
+    matches = reranker.rerank(
+        question=request.question,
+        matches=candidates,
         top_k=request.top_k,
     )
-
+    
     return {
         "document_id": request.document_id,
         "question": request.question,

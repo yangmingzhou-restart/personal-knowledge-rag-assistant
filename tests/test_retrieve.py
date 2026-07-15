@@ -131,3 +131,27 @@ def test_retrieve_matches_include_similarity_score():
     match = response.json()["matches"][0]
     assert "score" in match
     assert "chunk_id" in match
+
+def test_retrieve_matcges_include_rerank_metadata():
+    client = TestClient(app)
+    upload_response = client.post(
+        "/upload",
+        files={"file": ("hello.txt", b"hello rag retrieval", "text/plain")},
+    )
+    document_id = upload_response.json()["document_id"]
+
+    response = client.post(
+        "/retrieve",
+        json={
+            "document_id": document_id,
+            "question": "hello rag",
+            "top_k": 1,
+        },
+    )
+
+    assert response.status_code == 200
+
+    match = response.json()["matches"][0]
+    assert "score" in match
+    assert "rerank_score" in match
+    assert "candidate_rank" in match

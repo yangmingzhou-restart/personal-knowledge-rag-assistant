@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
+from uuid import NAMESPACE_URL, uuid5
 
 from app.retrieve import rank_chunks_by_similarity
 from app.storage import get_chunks_by_document, update_chunk_embedding
@@ -102,6 +103,117 @@ class SQLiteVectorStore(VectorStore):
             top_k=top_k,
         )
 
+
+class QdrantVectorStore(VectorStore):
+    """Qdrant implementation for local vector storage and retrieval."""
+
+    def __init__(self, url: str, collection_name: str):
+        from qdrant_client import QdrantClient
+
+        self.client = QdrantClient(url=url)
+        self.collection_name = collection_name
+
+    def _point_id(self, chunk_id: str) -> str:
+        """Convert project chunk_id into a stable UUID string accepted by Qdrant."""
+        return str(uuid5(NAMESPACE_URL, chunk_id))
+
+    def _ensure_collection(self, vector_size: int) -> None:
+        """Create the Qdrant collection lazily when the first embedding is written."""
+        from qdrant_client import models
+
+        if self.client.collection_exists(collection_name=self.collection_name):
+            return
+
+        self.client.create_collection( #创建Collection(向量表)
+            collection_name=self.collection_name, #表名
+            vectors_config=models.VectorParams(
+                size=vector_size, #每条embedding的维度, BGE是512
+                distance=models.Distance.COSINE, #相似度算法
+            ),
+        )
+
+    def upsert_embedding(self, chunks: list[dict]) -> None:
+        """
+        Save chunk embeddings into Qdrant and keep retrievable chunk fields in payload.
+        """
+        from qdrant_client import models
+
+        points = []
+        for chunk in chunks:
+            embedding = chunk.get("embedding")
+            if not isinstance(embedding, list):
+                raise ValueError("chunk embedding is required")
+
+            self._ensure_collection(vector_size=len(embedding))
+
+            payload = {
+                "chunk_id": chunk["chunk_id"],
+                "document_id": chunk["document_id"],
+                "chunk_index": chunk["chunk_index"],
+                "text": chunk["text"],
+                "start_char": chunk["start_char"],
+                "end_char": chunk["end_char"],
+                "created_at": chunk["created_at"],
+            }
+
+            points.append(
+                models.PointStruct( #Point = 一条向量记录s
+                    id=self._point_id(chunk["chunk_id"]),
+                    vector=embedding,
+                    payload=payload,
+                )
+            )
+
+        if not points:
+            return
+
+        self.client.upsert(
+            collection_name=self.collection_name,
+            points=points,
+        )
+
+    def search(
+        self,
+        document_id: str,
+        query_embedding: list[float],
+        top_k: int,
+        ) -> list[dict]:
+        """
+        Search Qdrant by query embedding and restrict matches to one document_id.
+        """
+        from qdrant_client import models
+
+        if top_k <= 0:
+            raise ValueError("top_k must be greater than 0")
+
+        if not self.client.collection_exists(collection_name=self.collection_name):
+            return []
+
+        result = self.client.query_points(
+            collection_name=self.collection_name,
+            query=query_embedding,
+            query_filter=models.Filter(
+                must=[
+                    models.FieldCondition(
+                        key="document_id",
+                        match=models.MatchValue(value=document_id),
+                    )
+                ]
+            ),
+            limit=top_k,
+            with_payload=True,
+        )
+
+        matches = []
+        for point in result.points:
+            payload = point.payload or {}
+            match = dict(payload)
+            match["score"] = point.score
+            matches.append(match)
+
+        return matches
+
+
 def get_vector_store() -> VectorStore:
     """
     return: VectorStore, selected by settings.vector_store_provider.
@@ -114,5 +226,11 @@ def get_vector_store() -> VectorStore:
 
     if provider == "sqlite":
         return SQLiteVectorStore(db_path=settings.database_path)
+    
+    if provider == "qdrant":
+        return QdrantVectorStore(
+            url=settings.qdrant_url, 
+            collection_name=settings.qdrant_collection,
+        )
     
     raise ValueError(f"Unsupported vector store provider: {provider}")
