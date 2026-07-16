@@ -60,8 +60,9 @@ def test_sqlite_vector_store_search_ranks_chunks(monkeypatch, tmp_path):
         },
     ]
     
-    def fake_get_chunks_by_document(db_path, document_id):
+    def fake_get_chunks_by_document(db_path, document_id, filters=None):
         assert document_id == "doc_1"
+        assert filters is None
         return chunks
     
     monkeypatch.setattr(
@@ -143,6 +144,8 @@ def test_qdrant_vector_store_upserts_chunk_payload(monkeypatch):
                 "end_char": 9,
                 "created_at": "2026-07-14T00:00:00+00:00",
                 "embedding": [1.0, 0.0],
+                "source": "upload",
+                "document_type": "txt",
             }
         ]
     )
@@ -153,6 +156,8 @@ def test_qdrant_vector_store_upserts_chunk_payload(monkeypatch):
     assert point.vector == [1.0, 0.0]
     assert point.payload["chunk_id"] == "chunk_1"
     assert point.payload["text"] == "hello rag"
+    assert point.payload["source"] == "upload"
+    assert point.payload["document_type"] == "txt"
 
 
 def test_qdrant_vector_store_search_returns_payload_with_score(monkeypatch):
@@ -170,15 +175,17 @@ def test_qdrant_vector_store_search_returns_payload_with_score(monkeypatch):
             return SimpleNamespace(
                 points=[
                     SimpleNamespace(
-                        payload={
-                            "chunk_id": "chunk_1",
-                            "document_id": "doc_1",
-                            "chunk_index": 0,
-                            "text": "hello rag",
-                            "start_char": 0,
-                            "end_char": 9,
-                            "created_at": "2026-07-14T00:00:00+00:00",
-                        },
+        payload={
+            "chunk_id": "chunk_1",
+            "document_id": "doc_1",
+            "chunk_index": 0,
+            "text": "hello rag",
+            "start_char": 0,
+            "end_char": 9,
+            "created_at": "2026-07-14T00:00:00+00:00",
+            "source": "upload",
+            "document_type": "txt",
+        },
                         score=0.88,
                     )
                 ]
@@ -194,11 +201,16 @@ def test_qdrant_vector_store_search_returns_payload_with_score(monkeypatch):
         document_id="doc_1",
         query_embedding=[1.0, 0.0],
         top_k=1,
+        filters={"source": "upload", "document_type": "txt"},
     )
 
     assert calls["collection_name"] == "test_chunks"
     assert calls["query"] == [1.0, 0.0]
     assert calls["limit"] == 1
+    filter_keys = {
+        condition.key for condition in calls["query_filter"].must
+    }
+    assert filter_keys == {"document_id", "source", "document_type"}
     assert matches == [
         {
             "chunk_id": "chunk_1",
@@ -208,6 +220,8 @@ def test_qdrant_vector_store_search_returns_payload_with_score(monkeypatch):
             "start_char": 0,
             "end_char": 9,
             "created_at": "2026-07-14T00:00:00+00:00",
+            "source": "upload",
+            "document_type": "txt",
             "score": 0.88,
         }
     ]

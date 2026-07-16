@@ -43,7 +43,8 @@ class VectorStore(ABC):
         document_id: str,
         query_embedding: list[float],
         top_k: int,
-        ) -> list[dict]:
+        filters: dict | None = None,
+    ) -> list[dict]:
         """
         document_id: str, 要查找的文档id
         query_embedding: list[float], 待查询向量
@@ -84,6 +85,7 @@ class SQLiteVectorStore(VectorStore):
         document_id: str,
         query_embedding: list[float],
         top_k: int,
+        filters: dict | None = None,
         ) -> list[dict]:
         """
         document_id: str, 要查找的文档id
@@ -95,8 +97,9 @@ class SQLiteVectorStore(VectorStore):
         chunks = get_chunks_by_document(
             db_path=self.db_path,
             document_id=document_id,
+            filters=filters,
         )
-
+        
         return rank_chunks_by_similarity(
             query_embedding=query_embedding,
             chunks=chunks,
@@ -154,6 +157,8 @@ class QdrantVectorStore(VectorStore):
                 "start_char": chunk["start_char"],
                 "end_char": chunk["end_char"],
                 "created_at": chunk["created_at"],
+                "source": chunk.get("source"),
+                "document_type": chunk.get("document_type"),
             }
 
             points.append(
@@ -177,6 +182,7 @@ class QdrantVectorStore(VectorStore):
         document_id: str,
         query_embedding: list[float],
         top_k: int,
+        filters: dict | None = None,
         ) -> list[dict]:
         """
         Search Qdrant by query embedding and restrict matches to one document_id.
@@ -189,16 +195,28 @@ class QdrantVectorStore(VectorStore):
         if not self.client.collection_exists(collection_name=self.collection_name):
             return []
 
+        must_conditions = [
+            models.FieldCondition(
+                key="document_id",
+                match=models.MatchValue(value=document_id),
+            )
+        ]
+        allowed_filters = {"source", "document_type"}
+        for key in allowed_filters:
+            value = filters.get(key) if filters else None
+            if value:
+                must_conditions.append(
+                    models.FieldCondition(
+                        key=key,
+                        match=models.MatchValue(value=value),
+                    )
+                )
+
         result = self.client.query_points(
             collection_name=self.collection_name,
             query=query_embedding,
             query_filter=models.Filter(
-                must=[
-                    models.FieldCondition(
-                        key="document_id",
-                        match=models.MatchValue(value=document_id),
-                    )
-                ]
+                must=must_conditions
             ),
             limit=top_k,
             with_payload=True,

@@ -155,3 +155,53 @@ def test_retrieve_matcges_include_rerank_metadata():
     assert "score" in match
     assert "rerank_score" in match
     assert "candidate_rank" in match
+
+
+def test_retrieve_applies_matching_metadata_filter():
+    client = TestClient(app)
+    upload_response = client.post(
+        "/upload",
+        files={"file": ("hello.txt", b"hello rag retrieval", "text/plain")},
+    )
+    document_id = upload_response.json()["document_id"]
+
+    response = client.post(
+        "/retrieve",
+        json={
+            "document_id": document_id,
+            "question": "hello rag",
+            "top_k": 1,
+            "filters": {
+                "source": "upload",
+                "document_type": "txt",
+            },
+        },
+    )
+
+    assert response.status_code == 200
+    assert len(response.json()["matches"]) == 1
+
+
+def test_retrieve_filters_out_non_matching_metadata():
+    client = TestClient(app)
+    upload_response = client.post(
+        "/upload",
+        files={"file": ("hello.txt", b"hello rag retrieval", "text/plain")},
+    )
+    document_id = upload_response.json()["document_id"]
+
+    response = client.post(
+        "/retrieve",
+        json={
+            "document_id": document_id,
+            "question": "hello rag",
+            "top_k": 1,
+            "filters": {
+                "source": "upload",
+                "document_type": "md",
+            },
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["matches"] == []

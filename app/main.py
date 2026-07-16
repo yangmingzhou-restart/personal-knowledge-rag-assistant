@@ -19,21 +19,27 @@ from app.config import settings
 
 
 DATABASE_PATH = settings.database_path
+
+class RetrievalFilters(BaseModel):
+    source: str | None = None
+    document_type: str | None = None
+
 class RetrievalRequest(BaseModel):
     document_id: str
     question: str
     top_k: int = 3
+    filters: RetrievalFilters | None = None
 
 class AnswerRequest(BaseModel):
     document_id: str
     question: str
     top_k: int = 3
+    filters: RetrievalFilters | None = None
 
 app = FastAPI(
     title="Personal Knowledge RAG Assistant",
     version="0.1.0",
 )
-
 
 @app.on_event("startup")
 def startup() -> None:
@@ -64,6 +70,8 @@ async def upload_file(file: UploadFile = File(...)) -> dict[str, str | int]:
         extension=extension,
         size_bytes=len(content),
         status="received",
+        source="upload",
+        document_type=extension.lstrip(".") or "unknown",
     )
 
     chunks = chunk_text(text)
@@ -75,6 +83,9 @@ async def upload_file(file: UploadFile = File(...)) -> dict[str, str | int]:
 
     embedding_provider = get_embedding_provider()
     embedded_chunks = embedding_provider.embed_chunks(saved_chunks)
+    for chunk in embedded_chunks:
+        chunk["source"] = document["source"]
+        chunk["document_type"] = document["document_type"]
     vector_store = get_vector_store()
     vector_store.upsert_embedding(embedded_chunks)
     
@@ -102,11 +113,18 @@ def retrieve(request: RetrievalRequest) -> dict:
     query_embedding = embedding_provider.embed_text(request.question)
     vector_store = get_vector_store()
 
+    filters = (
+        request.filters.model_dump(exclude_none=True)
+        if request.filters is not None
+        else None
+    )
+
     candidates_k = max(request.top_k*3, 10) # top_k -> candidate_k
     candidates = vector_store.search(
         document_id=request.document_id,
         query_embedding=query_embedding,
         top_k=candidates_k,
+        filters=filters,
     )
     
     reranker = get_reranker()
@@ -131,6 +149,7 @@ def answer(request: AnswerRequest) -> dict:
             document_id=request.document_id,
             question=request.question,
             top_k=request.top_k,
+            filters=request.filters,
         )
     )
     try: 

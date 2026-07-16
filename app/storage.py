@@ -5,6 +5,21 @@ from pathlib import Path
 from uuid import uuid4
 
 
+def _ensure_column(
+    conn: sqlite3.Connection,
+    table_name: str,
+    column_name: str,
+    column_definition: str,
+) -> None:
+    existing_columns = {
+        row[1] for row in conn.execute(f"PRAGMA table_info({table_name})")
+    }
+    if column_name not in existing_columns:
+        conn.execute(
+            f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_definition}"
+        )
+
+
 def init_db(db_path: Path) -> None:
     """
     db_path: Path, 数据库路径
@@ -22,7 +37,9 @@ def init_db(db_path: Path) -> None:
                 extension TEXT NOT NULL,
                 size_bytes INTEGER NOT NULL,
                 status TEXT NOT NULL,
-                created_at TEXT NOT NULL
+                created_at TEXT NOT NULL,
+                source TEXT DEFAULT 'upload',
+                document_type TEXT DEFAULT 'unknown'
             )
             """
         )
@@ -43,6 +60,9 @@ def init_db(db_path: Path) -> None:
             """
         )
 
+        _ensure_column(conn, "documents", "source", "TEXT DEFAULT 'upload'")
+        _ensure_column(conn, "documents", "document_type", "TEXT DEFAULT 'unknown'")
+
 
 def insert_document(
     db_path: Path,
@@ -50,13 +70,17 @@ def insert_document(
     extension: str,
     size_bytes: int,
     status: str,
-) -> dict[str, str | int]:
+    source: str | None = None,
+    document_type: str | None = None,
+) -> dict[str, str | int | None]:
     """
     db_path: Path, 数据库路径
     filename: str, 文档的文件名
     extension: str, 文档的扩展名
     size_bytes: int, 文档的大小（字节）
     status: str, 文档的状态（如"received"、"processed"等）
+    source: str | None, 文档的来源（如"upload"、"obsidian"等）
+    document_type: str | None, 文档的类型（如"txt"、"md"等）
 
     return: dict[str, str | int], 
             文档的详细信息，包含文档id、文件名、扩展名、大小、状态、创建时间等
@@ -67,6 +91,8 @@ def insert_document(
                 "size_bytes": 1024,
                 "status": "received",
                 "created_at": "2023-01-01T00:00:00+00:00",
+                "source": "upload",
+                "document_type": "note",
             }
     """    
     document = {
@@ -76,6 +102,8 @@ def insert_document(
         "size_bytes": size_bytes,
         "status": status,
         "created_at": datetime.now(UTC).isoformat(),
+        "source": source,
+        "document_type": document_type,
     }
 
     with sqlite3.connect(db_path) as conn:
@@ -87,9 +115,11 @@ def insert_document(
                 extension,
                 size_bytes,
                 status,
-                created_at
+                created_at,
+                source,
+                document_type
             )
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 document["document_id"],
@@ -98,6 +128,8 @@ def insert_document(
                 document["size_bytes"],
                 document["status"],
                 document["created_at"],
+                document["source"],
+                document["document_type"],
             ),
         )
 
@@ -119,6 +151,8 @@ def get_document(db_path: Path, document_id: str) -> dict[str, str | int] | None
                 "size_bytes": 1024,
                 "status": "received",
                 "created_at": "2023-01-01T00:00:00+00:00",
+                "source": "upload",
+                "document_type": "note",
             }
     """
     with sqlite3.connect(db_path) as conn:
@@ -131,7 +165,9 @@ def get_document(db_path: Path, document_id: str) -> dict[str, str | int] | None
                 extension,
                 size_bytes,
                 status,
-                created_at
+                created_at,
+                source,
+                document_type
             FROM documents
             WHERE document_id = ?
             """,
@@ -219,6 +255,7 @@ def insert_chunks(
 def get_chunks_by_document(
     db_path: Path,
     document_id: str,
+    filters: dict | None = None,
 ) -> list[dict[str, str | int]]:
     """
     db_path: Path, 数据库路径
@@ -239,23 +276,39 @@ def get_chunks_by_document(
                 }
             ]
     """
+    conditions = ["chunks.document_id = ?"]
+    params: list[str] = [document_id]
+
+    allowed_filters = {
+        "source": "documents.source",
+        "document_type": "documents.document_type",
+    }
+    for key, column in allowed_filters.items():
+        value = filters.get(key) if filters else None
+        if value:
+            conditions.append(f"{column} = ?")
+            params.append(value)
+
+    where_clause = " AND ".join(conditions)
+
     with sqlite3.connect(db_path) as conn:
         conn.row_factory = sqlite3.Row
         rows = conn.execute(
-            """
+            f"""
             SELECT
-                chunk_id,
-                document_id,
-                chunk_index,
-                text,
-                start_char,
-                end_char,
-                created_at,
-                embedding_json
+                chunks.chunk_id,
+                chunks.document_id,
+                chunks.chunk_index,
+                chunks.text,
+                chunks.start_char,
+                chunks.end_char,
+                chunks.created_at,
+                chunks.embedding_json
             FROM chunks
-            WHERE document_id = ?
+            JOIN documents ON chunks.document_id = documents.document_id
+            WHERE {where_clause}
             """,
-            (document_id,),
+            params,
         ).fetchall()
 
     result = []

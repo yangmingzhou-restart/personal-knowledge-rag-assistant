@@ -72,3 +72,45 @@ def test_update_chunk_embedding(tmp_path):
     saved = get_chunks_by_document(db_path, document["document_id"])
 
     assert saved[0]["embedding"] == [0.1, 0.2, 0.3]
+
+
+def test_get_chunks_by_document_applies_document_metadata_filters(tmp_path):
+    db_path = tmp_path / "app.sqlite3"
+    init_db(db_path)
+    note_document = insert_document(
+        db_path=db_path,
+        filename="note.md",
+        extension=".md",
+        size_bytes=10,
+        status="received",
+        source="upload",
+        document_type="note",
+    )
+
+    insert_chunks(
+        db_path,
+        note_document["document_id"],
+        [
+            {
+                "chunk_index": 0,
+                "text": "metadata filter note",
+                "start_char": 0,
+                "end_char": 20,
+            }
+        ],
+    )
+
+    matched = get_chunks_by_document(
+        db_path,
+        note_document["document_id"],
+        filters={"document_type": "note"},
+    )
+    filtered_out = get_chunks_by_document(
+        db_path,
+        note_document["document_id"],
+        filters={"document_type": "resume"},
+    )
+
+    assert len(matched) == 1
+    assert matched[0]["text"] == "metadata filter note"
+    assert filtered_out == []
