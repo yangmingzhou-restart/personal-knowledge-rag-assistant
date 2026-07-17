@@ -84,13 +84,16 @@ class OllamaLLMClient(LLMClient):
             "provider": f"ollama:{self.model}",
         }
 
-
+_llm_cache_flag : bool = False
 def get_llm_client() -> LLMClient:
     """
     Get LLMClient instance based on the provider in settings of config.py.
     """
+    global _llm_cache_flag
     provider = settings.llm_provider.lower()
-    
+
+    _llm_cache_flag = True # llm model loaded
+
     if provider == "fake":
         return FakeLLMClient()
 
@@ -103,6 +106,59 @@ def get_llm_client() -> LLMClient:
             model=settings.ollama_model,
         )
     
+    _llm_cache_flag = False # llm model not loaded
     raise LLMProviderError(f"Unsupported LLM provider: {provider}")
 
+def load_ollama_model() ->dict[str, str]:
+    """
+    Manually load Ollama model
 
+    Function:
+        Post a prompt, then ollama load the model.
+        Load the Ollama model instance in Swagger by clicking the button.
+    """
+    response = httpx.post(
+        f"{settings.ollama_base_url}/api/generate",
+        json={
+            "model": settings.ollama_model,
+            "prompt": "ping",
+            "stream": False,
+            "keep_alive": "10m",
+        },
+        timeout=120,
+    )
+    response.raise_for_status()
+
+    return {
+        "status": "loaded",
+        "model": settings.ollama_model,
+    }
+
+def unload_ollama_model() -> None:
+    """
+    Manually unload Ollama model
+
+    Function:
+        Post keep_alive=0, then ollama release the model.
+        Unload the Ollama model instance in Swagger by clicking the button.
+    """
+    global _llm_cache_flag
+
+    response = httpx.post(
+        f"{settings.ollama_base_url}/api/generate",
+        json={
+            "model": settings.ollama_model,
+            "prompt": "",
+            "stream": False,
+            "keep_alive": 0,
+        },
+        timeout=120,
+    )
+    response.raise_for_status()
+    
+    _llm_cache_flag = False # llm model unload
+
+    return {
+        "status": "unloaded",
+        "model": settings.ollama_model,
+    }

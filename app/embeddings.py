@@ -176,3 +176,24 @@ def reset_embedding_provider_cache() -> None:
     """
     global _embedding_provider_cache
     _embedding_provider_cache = None
+
+def load_embedding_model() -> EmbeddingProvider:
+    """
+    Manually load embedding provider
+
+    Function:
+        Load the embedding provider instance in Swagger by clicking the button.
+    """
+    return get_embedding_provider()
+
+def unload_embedding_model() -> None:
+    """
+    Manually unload embedding provider
+
+    Function:
+        Unload the embedding provider instance in Swagger by clicking the button.
+    """
+    reset_embedding_provider_cache()
+
+    import gc
+    gc.collect()
