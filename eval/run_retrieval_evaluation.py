@@ -124,6 +124,42 @@ def judge(expected_anchor: str, anchor_groups: list[list[str]]) -> str:
     
     return "fail"
 
+def first_hit_rank(expected_anchor: str, anchor_groups: list[list[str]]) -> int | None:
+    """Retrun 1-based rank of the first chunk containing expected_anchor."""
+    for index, anchors in enumerate(anchor_groups, start=1):
+        if expected_anchor in anchors:
+            return index
+    return None
+
+def calculate_retrieval_metrics(rows: list[dict]) -> dict[str, float]:
+    """
+    calculate Hit Rate@K, Recall@K, and MRR from evaluation rows.
+
+    now, each question has one expected_anchor, so Recall@K = Hit Rate@K/
+    later, it is easy to expand to multi expected_anchor questions.
+    """
+    if not rows:
+        return {
+            "hit_rate_at_k": 0.0, 
+            "recall_at_k": 0.0, 
+            "mrr": 0.0
+        }
+    
+    hit_count = 0
+    reciporcal_rank_sum = 0.0
+
+    for row in rows:
+        rank = row.get("first_hit_rank")
+        if rank is not None:
+            hit_count += 1
+            reciporcal_rank_sum += 1.0 / rank
+        
+    total = len(rows)
+    return {
+        "hit_rate_at_k": round(hit_count / total, 4),
+        "recall_at_k": round(hit_count / total, 4),
+        "mrr": round(reciporcal_rank_sum / total, 4)
+    }
 
 def run_retrieval_evaluation(
     client: TestClient,
@@ -188,12 +224,14 @@ def run_retrieval_evaluation(
         anchor_groups = extract_anchor_groups(matches)
         top_1 = matches[0] if matches else {}
         status = judge(item["expected_anchor"], anchor_groups)
-
+        hit_rank = first_hit_rank(item["expected_anchor"], anchor_groups)
+        
         rows.append(
             {
                 "id": item["id"],
                 "question": item["question"],
                 "expected_anchor": item["expected_anchor"],
+                "first_hit_rank": hit_rank,
                 "top_1_anchor": (
                     ", ".join(anchor_groups[0])
                     if anchor_groups
@@ -356,8 +394,17 @@ def render_final_analysis(rows: list[dict[str, Any]]) -> list[str]:
             "- Use this baseline to compare the rerank results. Focus first on partial cases, because the correct evidence is already retrieved but ranked too low.",
         ]
     )
-    return lines
 
+    metrics = calculate_retrieval_metrics(rows)
+
+    lines.extend(
+        [
+            "| Hit Rate@K | {:.2%} |".format(metrics["hit_rate_at_k"]),
+            "| Recall@K | {:.2%} |".format(metrics["recall_at_k"]),
+            "| MRR | {:.4f} |".format(metrics["mrr"]),
+        ]
+    )
+    return lines
 
 def main() -> None:
     client = TestClient(app)

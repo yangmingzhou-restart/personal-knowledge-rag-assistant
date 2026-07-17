@@ -7,6 +7,7 @@ from eval.run_retrieval_evaluation import (
     judge,
     parse_evaluation_questions,
     render_results_markdown,
+    calculate_retrieval_metrics
 )
 
 
@@ -167,3 +168,17 @@ def test_render_results_markdown_keeps_top_3_anchors_inside_one_table_cell():
 
     assert " ; " in row
     assert "unknown / no anchor ; [ANCHOR-PROJECT-PURPOSE]" in row
+
+def test_calculate_retrieval_metrics():
+    rows = [
+        {"first_hit_rank": 1},
+        {"first_hit_rank": 2},
+        {"first_hit_rank": None},
+    ]
+
+    metrics = calculate_retrieval_metrics(rows)
+
+    assert metrics["hit_rate_at_k"] == 0.6667
+    assert metrics["recall_at_k"] == 0.6667
+    assert metrics["mrr"] == 0.5
+    
