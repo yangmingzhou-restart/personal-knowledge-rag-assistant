@@ -31,5 +31,9 @@ jobs:
       - name: Run tests
         env:
           EMBEDDING_PROVIDER: fake
+          RERANKER_PROVIDER: keyword
+          LLM_PROVIDER: fake
+          VECTOR_STORE_PROVIDER: sqlite
+
         run: PYTHONPATH=. python -m pytest
 

@@ -127,7 +127,8 @@ def retrieve(request: RetrievalRequest) -> dict:
         filters=filters,
     )
     
-    unload_ollama_model() # unload embedding model, or out-of-memory
+    if _llm_cache_flag: # if llm model loaded, unload ollama model, or VRAM will be out of memory (my computer has 8GB VRAM)
+        unload_ollama_model() 
 
     reranker = get_reranker() # after unload the ollama model
     matches = reranker.rerank(
@@ -179,7 +180,7 @@ def answer(request: AnswerRequest) -> dict:
 
 
 @app.post("/admin/models/embedding/load")
-def load_embedding_model(status: int = 1) -> dict[str, str]:
+def load_embedding_model_endpoint(status: int = 1) -> dict[str, str]:
     if status == 1:
         load_embedding_model()
         return {"status": "loaded", "model_type": "embedding"}
@@ -189,7 +190,7 @@ def load_embedding_model(status: int = 1) -> dict[str, str]:
 
 
 @app.post("/admin/models/reranker/load")
-def load_reranker_model(status: int = 1) -> dict[str, str]:
+def load_reranker_model_endpoint(status: int = 1) -> dict[str, str]:
     if status == 1:
         load_reranker_model()
         return {"status": "loaded", "model_type": "rerank"}
@@ -199,7 +200,7 @@ def load_reranker_model(status: int = 1) -> dict[str, str]:
     
 
 @app.post("/admin/models/ollama/load")
-def load_llm_model(status: int = 1) -> dict[str, str]:
+def load_llm_model_endpoint(status: int = 1) -> dict[str, str]:
     if status == 1:
         load_ollama_model()
         return {"status": "loaded", "model_type": "ollama"}
