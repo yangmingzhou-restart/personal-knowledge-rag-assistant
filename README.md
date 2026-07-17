@@ -8,10 +8,6 @@ A local FastAPI-based RAG assistant that uploads text-like files, extracts text,
 
 ## Current Pipeline
 
-```text
-upload -> ingestion -> chunking -> embedding -> vector store -> rerank -> grounded prompt -> LLM answer
-```
-
 ```mermaid
 flowchart LR
     A["Upload"] --> B["Ingestion"]
@@ -39,7 +35,6 @@ flowchart LR
 - Keep Qdrant as an optional vector store implementation for local experiments.
 - Rerank retrieved candidates before returning final top-k matches.
 - Evaluate retrieval quality with anchor-based metrics such as Hit Rate@K, Recall@K, and MRR.
-- Provide admin endpoints for manually loading or unloading local embedding, reranker, and Ollama models.
 
 ## Tech Stack
 
@@ -61,18 +56,13 @@ flowchart LR
 2. `POST /upload`
 3. `POST /retrieve`
 4. `POST /answer`
-5. `POST /admin/models/embedding/load`
-6. `POST /admin/models/reranker/load`
-7. `POST /admin/models/ollama/load`
-
-Admin model endpoints use `status=1` to load a model and `status=0` to unload it.
 
 ## Local Demo Stack
 
 - API: FastAPI
 - Metadata and chunk storage: SQLite
-- Default vector store: SQLite-backed local vector storage
-- Optional vector store: Qdrant behind the same `VectorStore` boundary
+- Default vector store: Sqlite
+- Optional vector store: Qdrant
 - Embedding model: `BAAI/bge-small-zh-v1.5`
 - Reranker model: `BAAI/bge-reranker-base` 
 - LLM provider: Ollama

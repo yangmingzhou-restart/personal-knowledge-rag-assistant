@@ -3,6 +3,7 @@ from fastapi.testclient import TestClient
 from app.main import DATABASE_PATH, app
 from app.storage import get_chunks_by_document
 
+from tests.test_ingestion import build_sample_docx_bytes
 
 def test_upload_txt_file_returns_file_metadata():
     client = TestClient(app)
@@ -54,8 +55,20 @@ def test_upload_unsupported_file_type_returns_400():
     client = TestClient(app)
     response = client.post(
         "/upload",
-        files={"file": ("demo.pdf", b"fake pdf content", "application/pdf")},
+        files={"file": ("demo.exe", b"fake executable content", "application/octet-stream")},
     )
 
     assert response.status_code == 400
     assert "Unsupported file type" in response.json()["detail"]
+
+def test_upload_docx_file_returns_file_metadata():
+    client = TestClient(app)
+    content = build_sample_docx_bytes("DOCX content for RAG")
+    
+    response = client.post(
+        "/upload",
+        files={"file": ("sample.docx", content, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["filename"] == "sample.docx"
