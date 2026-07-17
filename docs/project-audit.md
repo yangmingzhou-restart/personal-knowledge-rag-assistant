@@ -13,20 +13,20 @@ It currently supports:
 - FastAPI API service.
 - File upload for `.txt`, `.md`, and `.csv`.
 - Text extraction and chunking.
-- SQlite storage for documents, chunks and embedding JSON.
+- SQLite storage for documents, chunks, and embedding JSON.
 - Fake embedding provider for test and CI.
 - Local BGE embedding provider for local demo.
 - Top-k retrieval by cosine similarity.
 - Fake LLM provider for tests and CI.
 - Ollama LLM provider for local answer generation.
-- `/retrieval` and `/answer` endpoints with source-aware output.
+- `/retrieve` and `/answer` endpoints with source-aware output.
 
 ## Current Boundaries
 
+- SQLite remains the default local vector storage path; Qdrant exists as an optional VectorStore implementation.
+- A reranking stage exists after vector retrieval.
+- Retrieval evaluation is small and anchor-based, with metrics and reranker-based local evaluation.
 - PDF and Word parsing are not fully implemented.
-- No dedicated vector database yet.
-- No reranking stage yet. 
-- Retrieval evaluation is still small and manual.
 - No authentication or user-level data isolation.
 
 ## Code Inventory
@@ -38,6 +38,8 @@ Expected core modules:
 - `app/chunking.py`: text chunking,
 - `app/storage.py`: SQLite documents/chunks/embeddings.
 - `app/retrieve.py`: similarity ranking.
+- `app/vector_store.py`: VectorStore boundary and SQLite/Qdrant implementations.
+- `app/rerank.py`: keyword and cross-encoder reranker boundary.
 - `app/prompts.py`: grounded prompt construction.
 - `app/generation.py`: answer-building boundary.
 - `app/llm.py`: fake and Ollama LLM clients.
@@ -67,7 +69,7 @@ CI rules:
 
 - CI should use fake providers.
 - CI should not require local BGE model files.
-- CI should not require a running Ollama services.
+- CI should not require a running Ollama service.
 - CI should not depend on private '.env'.
 
 Tests that really load local models or call a real service should be marked separately and skipped in CI.

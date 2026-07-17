@@ -94,9 +94,8 @@ The upload endpoint extracts text from the uploaded file, splits the text into c
 
 ## Current Limitations
 
-- Embeddings are stored in SQLite JSON, not a dedicated vector database.
-- Retrieval evaluation is still small and manual.
-- The current retrieval stage does not include reranking.
+- The default local path uses SQLite-backed vector storage, while Qdrant is available behind the VectorStore boundary.
+- Retrieval evaluation is small and anchor-based, with metrics such as Hit Rate@K, Recall@K, and MRR.
 - PDF and Word parsing are not fully implemented.
 - The project is single-user and does not include authentication or user-level data isolation.
 - Local LLM performance depends on laptop hardware.

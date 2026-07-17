@@ -214,7 +214,7 @@ Create a folder `examples/` containing:
 - 2 sample documents.
 - 10 test questions.
 - Expected source chunks.
-- Manual notes on retrieval quality.
+- anchor-based retrieval evaluation with expected evidence labels
 
 Evaluation table:
 
@@ -236,5 +236,4 @@ Evaluation table:
 - How chunk size affects retrieval quality.
 - Why source citations matter for enterprise adoption.
 - Why retrieval inspection is useful before answer generation.
-- How to evaluate retrieval with manually written question-answer examples.
 - Why provider abstraction matters for switching model APIs.

@@ -1,5 +1,13 @@
 # Demo Flow
 
+0. Configure the environment variables.
+1. Start API
+2. Upload sample document through Swagger
+3. Retrieve relevant chunks with top_k=3
+4. Check rerank metadata: score, rerank_score, candidate_rank
+5. Call /answer and inspect answer, provider, sources, confidence_notes
+6. Explain current limitations.
+
 ## 0. Environment
 
 Local development uses `.env`.
@@ -8,7 +16,15 @@ Required local settings:
 
 ```text
 EMBEDDING_PROVIDER=local
-LOCAL_EMBEDDING_MODEL=D:\AI创业\AI模型\embedding-models\BAAI\bge-small-zh-v1.5
+LOCAL_EMBEDDING_MODEL=D:\models\embedding-models\BAAI\bge-small-zh-v1.5
+
+RERANKER_PROVIDER=cross_encoder
+RERANKER_MODEL=D:\models\rerank-model\BAAI\bge-reranker-base
+
+VECTOR_STORE_PROVIDER=sqlite
+QDRANT_URL=http://127.0.0.1:6333
+QDRANT_COLLECTION=personal_knowledge_chunks
+
 LLM_PROVIDER=ollama
 OLLAMA_BASE_URL=http://127.0.0.1:11434
 OLLAMA_MODEL=qwen2.5:3b
@@ -156,15 +172,19 @@ For CI or simple Docker verification, use fake providers:
 
 ```text
 EMBEDDING_PROVIDER=fake
+RERANKER_PROVIDER=keyword
 LLM_PROVIDER=fake
+VECTOR_STORE_PROVIDER=sqlite
 ```
 
 ## 8. Current Limitations
 
-- SQLite is used for embedding storage in this demo; production retrieval should use a vector database.
-- The demo does not include reranking, authentication, or multi-user data isolation.
+- The default local path uses SQLite-backed vector storage, while Qdrant is available behind the VectorStore boundary.
+- Retrieval evaluation is small and anchor-based, with metrics such as Hit Rate@K, Recall@K, and MRR.
 - PDF and Word parsing are not fully implemented.
-- Local LLM speed depends on laptop hardware.
+- The project is single-user and does not include authentication or user-level data isolation.
+- Local LLM performance depends on laptop hardware.
+
 
 ## 9. CI And Local Dependency Notes
 

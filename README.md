@@ -4,12 +4,24 @@
 
 ## What This Project Does
 
-A local FastAPI-based RAG assistant that uploads text-like files, extracts text, splits content into traceable chunks, stores metadata and embeddings in SQLite, retrieves relevant chunks, and generates grounded answers with source information.
+A local FastAPI-based RAG assistant that uploads text-like files, extracts text, splits content into traceable chunks, stores metadata and embeddings, retrieves relevant chunks through a replaceable VectorStore boundary, reranks candidate chunks and generates grounded answers with source information.
 
 ## Current Pipeline
 
 ```text
-upload -> ingestion -> chunking -> embedding -> storage -> retrieval -> prompt -> LLM answer
+upload -> ingestion -> chunking -> embedding -> vector store -> rerank -> grounded prompt -> LLM answer
+```
+
+```mermaid
+flowchart LR
+    A["Upload"] --> B["Ingestion"]
+    B --> C["Chunking"]
+    C --> D["Embedding Provider"]
+    D --> E["VectorStore Boundary"]
+    E --> F["Reranker Provider"]
+    F --> G["Grounded Prompt"]
+    G --> H["LLM Provider"]
+    H --> I["Answer + Sources"]
 ```
 
 ## Current Features
@@ -23,6 +35,11 @@ upload -> ingestion -> chunking -> embedding -> storage -> retrieval -> prompt -
 - Use a local Ollama LLM provider to generate grounded answers.
 - Return `answer`, `provider`, `sources`, and `confidence_notes` from `/answer`.
 - Centralize runtime configuration through `.env` and `BaseSettings`.
+- Use a replaceable `VectorStore` boundary with SQLite as the default local implementation.
+- Keep Qdrant as an optional vector store implementation for local experiments.
+- Rerank retrieved candidates before returning final top-k matches.
+- Evaluate retrieval quality with anchor-based metrics such as Hit Rate@K, Recall@K, and MRR.
+- Provide admin endpoints for manually loading or unloading local embedding, reranker, and Ollama models.
 
 ## Tech Stack
 
@@ -34,6 +51,9 @@ upload -> ingestion -> chunking -> embedding -> storage -> retrieval -> prompt -
 - local BGE embedding model
 - Ollama
 - GitHub Actions
+- Qdrant client
+- cross-encoder reranker
+- provider-based architecture
 
 ## API Endpoints
 
@@ -41,12 +61,20 @@ upload -> ingestion -> chunking -> embedding -> storage -> retrieval -> prompt -
 2. `POST /upload`
 3. `POST /retrieve`
 4. `POST /answer`
+5. `POST /admin/models/embedding/load`
+6. `POST /admin/models/reranker/load`
+7. `POST /admin/models/ollama/load`
+
+Admin model endpoints use `status=1` to load a model and `status=0` to unload it.
 
 ## Local Demo Stack
 
 - API: FastAPI
 - Metadata and chunk storage: SQLite
+- Default vector store: SQLite-backed local vector storage
+- Optional vector store: Qdrant behind the same `VectorStore` boundary
 - Embedding model: `BAAI/bge-small-zh-v1.5`
+- Reranker model: `BAAI/bge-reranker-base` 
 - LLM provider: Ollama
 - LLM model: `qwen2.5:3b`
 
@@ -56,73 +84,51 @@ Copy `.env.example` to `.env` and adjust local paths.
 
 ```env
 EMBEDDING_PROVIDER=local
-LOCAL_EMBEDDING_MODEL=D:\AI创业\AI模型\embedding-models\BAAI\bge-small-zh-v1.5
+LOCAL_EMBEDDING_MODEL=D:\models\embedding-models\BAAI\bge-small-zh-v1.5
+
+RERANKER_PROVIDER=cross_encoder
+RERANKER_MODEL=D:\models\rerank-model\BAAI\bge-reranker-base
+
+VECTOR_STORE_PROVIDER=sqlite
+QDRANT_URL=http://127.0.0.1:6333
+QDRANT_COLLECTION=personal_knowledge_chunks
+
 LLM_PROVIDER=ollama
 OLLAMA_BASE_URL=http://127.0.0.1:11434
 OLLAMA_MODEL=qwen2.5:3b
 ```
 
-GitHub Actions CI should use fake providers and must not depend on local model files or a running Ollama service.
-
-## Run Locally
-
-Start Ollama first:
-
-```powershell
-D:\ollama\ollama.exe serve
-```
-
-Start the API:
-
-```powershell
-C:\Users\YangMingZhou\anaconda3\python.exe -m uvicorn app.main:app --reload
-```
-
-Open:
-
-```text
-http://127.0.0.1:8000/docs
-```
-
-## Run With Docker
-
-Docker mode is mainly for API packaging verification. It does not automatically access Windows local model paths or the host Ollama service.
-
-```powershell
-docker build -t personal-knowledge-rag .
-docker run --rm -p 8000:8000 personal-knowledge-rag
-```
-
-Open:
-
-```text
-http://127.0.0.1:8000/docs
-```
-
-For simple Docker verification, use fake providers:
-
-```text
-EMBEDDING_PROVIDER=fake
-LLM_PROVIDER=fake
-```
+GitHub Actions CI should use fake providers and must not depend on local model files or a running Ollama service: `EMBEDDING_PROVIDER=fake`, `RERANKER_PROVIDER=keyword`, `LLM_PROVIDER=fake`, `VECTOR_STORE_PROVIDER=sqlite`.
 
 ## Current Limitations
 
-- Embeddings are stored in SQLite JSON instead of a dedicated vector database.
-- Retrieval evaluation is still small and manual.
-- The current retrieval stage does not include reranking.
+- The default local demo still uses SQLite-backed vector storage; Qdrant is available as a replaceable implementation but is not the default production backend.
+- Retrieval evaluation is intentionally small and anchor-based; it is useful for comparing changes, not a comprehensive benchmark.
+- Real embedding, reranker, and Ollama models can exceed laptop VRAM if loaded together, so local demos may require manual model loading/unloading.
 - PDF and Word parsing are not fully implemented.
-- The project is single-user and does not include authentication or user-level data isolation.
-- Local LLM performance depends on laptop hardware.
+- The project is single-user and does not include authentication, authorization, or user-level data isolation.
+- The project is not a production-grade RAG platform; it is a local portfolio project focused on RAG architecture, provider boundaries, evaluation, and demoability.
+
+## Evaluation
+
+The project includes an anchor-based retrieval evaluation set under `eval/`.
+
+The latest local evaluation can run through the reranker stage and report:
+
+- Hit Rate@K
+- Recall@K
+- MRR
+- pass / partial / fail cases
+
+This makes retrieval quality comparable across changes such as reranking, metadata filters, and vector store implementations.
+
+See:
+
+- `eval/evaluation-questions.md`
+- `eval/evaluation-results-real-reranker.md`
+- `eval/run_retrieval_evaluation.py`
 
 ## Planned Improvements
 
-- Migrate vector storage to Qdrant, Milvus, or pgvector.
-- Add a retrieval evaluation set with expected source chunks and top-k metrics.
-- Add reranking after initial vector retrieval.
 - Improve document parsing for PDF and Word files.
 - Add authentication and user-level document isolation.
-
-## Interview Summary
-
-This project demonstrates a complete local RAG application workflow with clear module boundaries, source traceability, provider abstraction, CI-safe fake providers, and a local BGE + Ollama demo path.

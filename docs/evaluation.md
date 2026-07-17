@@ -1,6 +1,6 @@
 # RAG Evaluation
 
-This document describes a small manual evaluation set for the Personal Knowledge RAG Assistant.
+This document describes a small anchor-based evaluation set for the Personal Knowledge RAG Assistant. It can run through the reranker stage and report Hit Rate@K, Recall@K, and MRR.
 
 ## Purpose
 
@@ -8,17 +8,17 @@ The goal is to check whether the system retrieves relevant context and generates
 
 ## Evaluation files
 
-- 'eval/sample-personal-knowledge.md': sample document used as the knowledge base.
-- 'eval/evaluation-questions.md': fixed questions with sources and expoectefd answer points.
+- `eval/sample-personal-knowledge.md`: sample document used as the knowledge base.
+- `eval/evaluation-questions.md`: fixed questions with sources and expected answer points.
 
-## Manual evaluation flow
+## Evaluation flow
 
 1. Start the API service.
-2. Uplaod 'eval/sample-personal-knowledge.md' throught '/upload/'
-3. Copy the returned 'document_id'
-4. For each question in 'eval/evaluation-questions.md', call '/retrieve' first.
-5. Check whether returned matches contain the expoecrted source section.
-6. Call '/answer' with the same question.
+2. Upload `eval/sample-personal-knowledge.md` through `/upload`.
+3. Copy the returned `document_id`.
+4. For each question in `eval/evaluation-questions.md`, call `/retrieve` first.
+5. Check whether returned matches contain the expected source section.
+6. Call `/answer` with the same question.
 7. Check whether the answer uses the retrieved context and includes source information.
 
 ## What to evaluate
@@ -33,5 +33,4 @@ The goal is to check whether the system retrieves relevant context and generates
 
 ## Current status
 
-The project now supports local BGE emebdding through 'LocalEmbeddingProvider'.
-This evaluation records whether real embedding improve retrieval quality before connecting a real LLM provider.
+The project supports local BGE embeddings, reranker-based retrieval evaluation, and local Ollama answer generation. This evaluation focuses on whether retrieval and reranking return useful evidence before the final answer is generated.

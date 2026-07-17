@@ -179,6 +179,7 @@ def answer(request: AnswerRequest) -> dict:
     }
 
 
+"""
 @app.post("/admin/models/embedding/load")
 def load_embedding_model_endpoint(status: int = 1) -> dict[str, str]:
     if status == 1:
@@ -207,3 +208,4 @@ def load_llm_model_endpoint(status: int = 1) -> dict[str, str]:
     elif status == 0:
         unload_ollama_model()
         return {"status": "unloaded", "model_type": "ollama"}
+"""
