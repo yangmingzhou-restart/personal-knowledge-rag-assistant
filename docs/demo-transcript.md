@@ -35,7 +35,7 @@ POST /upload
 Uploaded file:
 
 ```text
-eval/sample-personal-konwledge.md
+eval/sample-personal-knowledge.md
 ```
 
 Example response:
@@ -43,7 +43,7 @@ Example response:
 ```json
 {
   "document_id": "doc_2ebe4beb3963",
-  "filename": "sample-personal-konwledge.md",
+  "filename": "sample-personal-knowledge.md",
   "extension": ".md",
   "status": "received",
   "chunk_count": 2
@@ -96,6 +96,6 @@ The upload endpoint extracts text from the uploaded file, splits the text into c
 
 - The default local path uses SQLite-backed vector storage, while Qdrant is available behind the VectorStore boundary.
 - Retrieval evaluation is small and anchor-based, with metrics such as Hit Rate@K, Recall@K, and MRR.
-- PDF and Word parsing are not fully implemented.
+- PDF and Word text extraction is supported for machine-readable documents; OCR for scanned PDFs is not implemented.
 - The project is single-user and does not include authentication or user-level data isolation.
 - Local LLM performance depends on laptop hardware.

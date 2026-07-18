@@ -6,12 +6,12 @@
 
 ## Current Project Status
 
-The project is a local RAG assistant suitable for portfolio demonstration and  interview discussion.
+The project is a local RAG assistant suitable for portfolio demonstration and technical review.
 
 It currently supports:
 
 - FastAPI API service.
-- File upload for `.txt`, `.md`, and `.csv`.
+- File upload for `.txt`, `.md`, `.csv`, `.pdf`, and `.docx`.
 - Text extraction and chunking.
 - SQLite storage for documents, chunks, and embedding JSON.
 - Fake embedding provider for test and CI.
@@ -26,8 +26,8 @@ It currently supports:
 - SQLite remains the default local vector storage path; Qdrant exists as an optional VectorStore implementation.
 - A reranking stage exists after vector retrieval.
 - Retrieval evaluation is small and anchor-based, with metrics and reranker-based local evaluation.
-- PDF and Word parsing are not fully implemented.
-- No authentication or user-level data isolation.
+- PDF and Word text extraction is supported for machine-readable documents; OCR for scanned PDFs is not implemented.
+- No authentication or user-level data isolation in the current portfolio version.
 
 ## Code Inventory
 
@@ -35,7 +35,7 @@ Expected core modules:
 
 - `app/main.py`: FastAPI endpoints and request models.
 - `app/ingestion.py`: file text extraction.
-- `app/chunking.py`: text chunking,
+- `app/chunking.py`: text chunking.
 - `app/storage.py`: SQLite documents/chunks/embeddings.
 - `app/retrieve.py`: similarity ranking.
 - `app/vector_store.py`: VectorStore boundary and SQLite/Qdrant implementations.

@@ -248,7 +248,7 @@ For each question, record the actual result in `eval/evaluation-results.md`.
 - Question: Why should this RAG project stop deepening after evaluation, rerank, Qdrant, and metadata filters?
 - Expected anchor: `[ANCHOR-PROJECT-LIMITATIONS]`
 - Expected evidence:
-  - project focuses on interview-relevant AI application engineering
+  - project focuses on practical AI application engineering
   - does not solve every production concern
   - honest scope control matters
 - Question type: learning strategy

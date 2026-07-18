@@ -1,10 +1,12 @@
-# Personal Knowledge RAG Assistant
+# LangChain-style 模块化 RAG 系统
 
 [![CI](https://github.com/yangmingzhou-restart/personal-knowledge-rag-assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/yangmingzhou-restart/personal-knowledge-rag-assistant/actions/workflows/ci.yml)
 
 ## What This Project Does
 
-A local FastAPI-based RAG assistant that uploads text-like files, extracts text, splits content into traceable chunks, stores metadata and embeddings, retrieves relevant chunks through a replaceable VectorStore boundary, reranks candidate chunks and generates grounded answers with source information.
+A local FastAPI-based, LangChain-style RAG assistant that uploads text-like files, extracts text, splits content into traceable chunks, stores metadata and embeddings, retrieves relevant chunks through a replaceable VectorStore boundary, reranks candidate chunks, and generates grounded answers with source information.
+
+This repository does not depend on LangChain as the core framework. "LangChain-style" means the project follows the common RAG application pattern: ingestion, chunking, embedding, vector retrieval, reranking, prompt assembly, LLM generation, and source citation.
 
 ## Current Pipeline
 
@@ -22,12 +24,15 @@ flowchart LR
 
 ## Current Features
 
-- Upload `.txt`, `.md`, and `.csv` files.
+- Upload `.txt`, `.md`, `.csv`, `.pdf`, and `.docx` files.
+- Extract machine-readable PDF and Word text, while keeping OCR as a planned improvement.
 - Split uploaded text into chunks with `chunk_index`, `start_char`, and `end_char`.
 - Store documents, chunks, and embedding JSON in SQLite.
 - Use fake embedding and LLM providers for tests and GitHub Actions CI.
 - Use local BGE embeddings for local demo retrieval.
 - Retrieve top-k chunks by cosine similarity.
+- Filter retrieval by metadata fields such as `source` and `document_type`.
+- Use a deterministic keyword reranker for CI and an optional local Cross-Encoder reranker for real local demos.
 - Use a local Ollama LLM provider to generate grounded answers.
 - Return `answer`, `provider`, `sources`, and `confidence_notes` from `/answer`.
 - Centralize runtime configuration through `.env` and `BaseSettings`.
@@ -61,7 +66,7 @@ flowchart LR
 
 - API: FastAPI
 - Metadata and chunk storage: SQLite
-- Default vector store: Sqlite
+- Default vector store: SQLite
 - Optional vector store: Qdrant
 - Embedding model: `BAAI/bge-small-zh-v1.5`
 - Reranker model: `BAAI/bge-reranker-base` 
@@ -95,7 +100,7 @@ GitHub Actions CI should use fake providers and must not depend on local model f
 - The default local demo still uses SQLite-backed vector storage; Qdrant is available as a replaceable implementation but is not the default production backend.
 - Retrieval evaluation is intentionally small and anchor-based; it is useful for comparing changes, not a comprehensive benchmark.
 - Real embedding, reranker, and Ollama models can exceed laptop VRAM if loaded together, so local demos may require manual model loading/unloading.
-- PDF and Word parsing are not fully implemented.
+- PDF and Word text extraction is supported for machine-readable documents; OCR for scanned PDFs is not implemented.
 - The project is single-user and does not include authentication, authorization, or user-level data isolation.
 - The project is not a production-grade RAG platform; it is a local portfolio project focused on RAG architecture, provider boundaries, evaluation, and demoability.
 
@@ -112,6 +117,18 @@ The latest local evaluation can run through the reranker stage and report:
 
 This makes retrieval quality comparable across changes such as reranking, metadata filters, and vector store implementations.
 
+Latest small anchor-set result:
+
+| Metric | Result |
+|---|---:|
+| Questions | 20 |
+| Hit Rate@3 | 80% |
+| Recall@3 | 80% |
+| MRR | 0.6500 |
+| Pass / Partial / Fail | 10 / 6 / 4 |
+
+This is a small project evaluation set, not a public benchmark.
+
 See:
 
 - `eval/evaluation-questions.md`
@@ -120,5 +137,6 @@ See:
 
 ## Planned Improvements
 
-- Improve document parsing for PDF and Word files.
+- Add OCR fallback for scanned PDFs.
 - Add authentication and user-level document isolation.
+- Add a lightweight web UI and deployment hardening after the RAG portfolio version is stable.

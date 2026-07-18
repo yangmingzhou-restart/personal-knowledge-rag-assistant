@@ -1,10 +1,12 @@
-# Personal Knowledge RAG Assistant Spec
+# LangChain-style 模块化 RAG 系统 Spec
 
 ## Purpose
 
 Build a practical RAG application that lets users upload private documents and ask questions grounded in those documents.
 
-This project is designed for AI Application Developer / RAG Engineer interviews. It should prove that you can build a complete LLM application workflow, not just call a chatbot API.
+This project should prove that the system can run a complete LLM application workflow, not just call a chatbot API.
+
+The implementation follows a LangChain-style RAG workflow, but keeps the main RAG components implemented as explicit local modules rather than hiding the pipeline behind one framework call.
 
 ## User Story
 
@@ -12,19 +14,19 @@ As a user, I can upload documents and ask questions. The system answers using th
 
 ## Core Features
 
-1. Upload `.txt`, `.md`, `.pdf`, and `.csv` files.
+1. Upload `.txt`, `.md`, `.csv`, `.pdf`, and `.docx` files.
 2. Extract plain text from uploaded files.
 3. Split text into chunks of 500-800 Chinese/English characters.
 4. Store document metadata in SQLite.
-5. Store embeddings in a vector database.
-6. Retrieve top 5 relevant chunks for a question.
+5. Store embeddings through a replaceable VectorStore boundary, with SQLite as the default local implementation and Qdrant as an optional local implementation.
+6. Retrieve top-k relevant chunks for a question.
 7. Generate an answer with source citations.
 8. Return a JSON response containing `answer`, `sources`, and `confidence_notes`.
 
 ## Non-Goals
 
-- Do not build user login in the first version.
-- Do not build multi-tenant permission management in the first version.
+- Do not build user login in the current portfolio version.
+- Do not build multi-tenant permission management in the current portfolio version.
 - Do not build a complex frontend before the API works.
 - Do not attempt fine-tuning.
 - Do not claim enterprise production readiness.
@@ -37,7 +39,7 @@ flowchart LR
     B --> C["Text extraction"]
     C --> D["Chunking"]
     D --> E["Embedding"]
-    E --> F["Vector database"]
+    E --> F["VectorStore boundary"]
     B --> G["SQLite metadata"]
     H["User question"] --> I["Question embedding"]
     I --> F
@@ -62,7 +64,7 @@ Output:
 }
 ```
 
-### POST `/documents`
+### POST `/upload`
 
 Purpose:
 - Upload and index one document.
@@ -76,7 +78,10 @@ Output:
 {
   "document_id": "doc_001",
   "filename": "example.pdf",
-  "status": "indexed",
+  "extension": ".pdf",
+  "size_bytes": 12345,
+  "status": "received",
+  "text_preview": "Extracted text preview...",
   "chunk_count": 18
 }
 ```
@@ -95,6 +100,7 @@ Input:
 
 ```json
 {
+  "document_id": "doc_001",
   "question": "What are the main conclusions?",
   "top_k": 5
 }
@@ -104,20 +110,22 @@ Output:
 
 ```json
 {
+  "document_id": "doc_001",
   "question": "What are the main conclusions?",
-  "chunks": [
+  "top_k": 5,
+  "matches": [
     {
       "document_id": "doc_001",
-      "filename": "example.pdf",
       "chunk_id": "chunk_004",
+      "chunk_index": 4,
       "score": 0.83,
-      "text_preview": "The key result is..."
+      "text": "The key result is..."
     }
   ]
 }
 ```
 
-### POST `/questions`
+### POST `/answer`
 
 Purpose:
 - Ask a question and receive an answer grounded in retrieved document chunks.
@@ -126,6 +134,7 @@ Input:
 
 ```json
 {
+  "document_id": "doc_001",
   "question": "What are the main conclusions?",
   "top_k": 5
 }
@@ -135,12 +144,16 @@ Output:
 
 ```json
 {
+  "document_id": "doc_001",
+  "question": "What are the main conclusions?",
+  "top_k": 5,
   "answer": "The document concludes that...",
+  "provider": "fake",
   "sources": [
     {
-      "document_id": "doc_001",
-      "filename": "example.pdf",
       "chunk_id": "chunk_004",
+      "chunk_index": 4,
+      "score": 0.83,
       "text_preview": "The key result is..."
     }
   ],
@@ -158,8 +171,9 @@ Fields:
 - `extension`: file extension.
 - `size_bytes`: uploaded file size.
 - `created_at`: ingestion time.
-- `status`: `uploaded`, `indexed`, or `failed`.
-- `error_message`: extraction/indexing error if any.
+- `status`: current API uses `received`.
+- `source`: document source, currently usually `upload`.
+- `document_type`: normalized document type, usually derived from the file extension.
 
 ### `chunks`
 
@@ -184,11 +198,11 @@ Rules:
 
 ## Embedding Rules
 
-Development mode:
-- Use fake deterministic embeddings for tests.
+Development and CI mode:
+- Use fake deterministic embeddings for tests and GitHub Actions.
 
 Demo mode:
-- Use OpenAI-compatible embedding API or a local embedding model.
+- Use a local BGE embedding model.
 
 Principle:
 - Keep embedding provider behind a small interface so the project can switch providers.
@@ -210,11 +224,11 @@ Context:
 
 ## Evaluation Plan
 
-Create a folder `examples/` containing:
-- 2 sample documents.
-- 10 test questions.
-- Expected source chunks.
-- anchor-based retrieval evaluation with expected evidence labels
+Use the `eval/` folder:
+- `eval/sample-personal-knowledge.md`
+- `eval/evaluation-questions.md`
+- expected evidence anchors
+- anchor-based retrieval evaluation results, including baseline, fake reranker, and real reranker outputs
 
 Evaluation table:
 
@@ -222,18 +236,24 @@ Evaluation table:
 |---|---|---|---|---|
 | What is the main conclusion? | chunk_004 | chunk_004 | yes | Direct match |
 
-## Resume Claims Supported
+Current small anchor-set result:
 
-- Built a FastAPI-based RAG system.
-- Implemented document ingestion, chunking, vector retrieval, and cited answer generation.
-- Designed retrieval inspection endpoint to debug RAG quality.
-- Added SQLite metadata storage for document and chunk tracking.
-- Created evaluation examples for retrieval quality.
+| Metric | Result |
+|---|---:|
+| Questions | 20 |
+| Hit Rate@3 | 80% |
+| Recall@3 | 80% |
+| MRR | 0.6500 |
+| Pass / Partial / Fail | 10 / 6 / 4 |
 
-## Interview Talking Points
+## Supported Project Claims
 
-- Why RAG reduces hallucination compared with direct prompting.
-- How chunk size affects retrieval quality.
-- Why source citations matter for enterprise adoption.
-- Why retrieval inspection is useful before answer generation.
-- Why provider abstraction matters for switching model APIs.
+- Built a FastAPI-based modular RAG system with upload, parsing, chunking, embedding, retrieval, reranking, generation, and source citation.
+- Supported `.txt`, `.md`, `.csv`, `.pdf`, and `.docx` ingestion for machine-readable documents.
+- Designed replaceable provider boundaries for Embedding, VectorStore, Reranker, and LLM clients.
+- Implemented SQLite as the default local vector storage path and Qdrant as an optional local VectorStore implementation.
+- Added metadata filtering through `source` and `document_type` fields.
+- Integrated local BGE embeddings, optional Cross-Encoder reranking, and Ollama-based local answer generation.
+- Built deterministic fake providers so tests and GitHub Actions CI do not depend on local model files or running services.
+- Created a 20-question anchor-based retrieval evaluation set with Hit Rate@K, Recall@K, MRR, and failure classification.
+- Verified the local test suite with 81 automated tests passing in the current closeout state.

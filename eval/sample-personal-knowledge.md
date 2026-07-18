@@ -8,7 +8,7 @@ Each section contains a unique anchor label. During manual evaluation, use the a
 
 The Personal Knowledge RAG Assistant is designed to help a user upload personal notes, split the notes into chunks, retrieve relevant context, and generate grounded answers. The project is not a generic chatbot. Its main value is that answers should be connected to uploaded source material. The system should make it clear which chunks were used as evidence, so a user can trace the answer back to the original document.
 
-This project also serves as a portfolio project for AI application development. It demonstrates backend API design, document ingestion, chunk storage, embedding generation, retrieval ranking, prompt construction, and LLM provider boundaries. The goal is not to build a perfect enterprise system immediately. The goal is to build a credible RAG pipeline that can be explained clearly in interviews and improved step by step.
+This project also serves as a portfolio project for AI application development. It demonstrates backend API design, document ingestion, chunk storage, embedding generation, retrieval ranking, prompt construction, and LLM provider boundaries. The goal is not to build a perfect enterprise system immediately. The goal is to build a credible RAG pipeline that can be reviewed clearly and improved step by step.
 
 ## Section 02 - Upload Pipeline [ANCHOR-UPLOAD-PIPELINE]
 
@@ -128,13 +128,12 @@ Single document_id retrieval is useful for learning, but it is limited. Real kno
 
 This project plans to add a small metadata filter step after the vector store boundary is stable. The goal is not to build a full enterprise permission system. The goal is to show how retrieval can move from one-document search toward knowledge-base search.
 
-Metadata filters help answer questions such as: search only policy documents, search only notes tagged with interview, or search only documents from one workspace. This is closer to real RAG applications in companies.
+Metadata filters help answer questions such as: search only policy documents, search only notes tagged with project review, or search only documents from one workspace. This is closer to real RAG applications in companies.
 
 ## Section 17 - Project Limitations [ANCHOR-PROJECT-LIMITATIONS]
 
 The current project is a learning and portfolio RAG system, not a production enterprise platform. It does not yet implement full authentication, user-level permissions, production monitoring, large-scale ingestion queues, PDF and Word parsing, or multi-tenant data isolation.
 
-The project currently focuses on the most interview-relevant parts of an AI application: ingestion, chunking, embeddings, vector store boundary, retrieval, prompt building, LLM client boundary, evaluation, and planned reranking. These pieces show practical AI application engineering without pretending that every production concern is solved.
+The project currently focuses on the most practical parts of an AI application: ingestion, chunking, embeddings, vector store boundary, retrieval, prompt building, LLM client boundary, evaluation, and planned reranking. These pieces show practical AI application engineering without pretending that every production concern is solved.
 
 The honest limitation statement is important. A credible engineer can explain both what the system does and what it does not do yet.
-

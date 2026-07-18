@@ -19,7 +19,7 @@ The current baseline uses:
 
 - sample document: `eval/sample-personal-knowledge.md`
 - questions: `eval/evaluation-questions.md`
-- output: `eval/evaluation-results.md`
+- outputs: `eval/evaluation-results-baseline.md`, `eval/evaluation-results-fake-reranker.md`, and `eval/evaluation-results-real-reranker.md`
 - chunk size: `500`
 - overlap: `50`
 - top k: `3`
@@ -100,9 +100,9 @@ Likely improvement:
 2. Keep the current results as a baseline.
 3. Add rerank with a wider candidate set.
 4. Compare rerank results against the baseline.
-5. Add Qdrant behind the vector store boundary.
-6. Add metadata filters for multi-document retrieval.
+5. Keep Qdrant behind the vector store boundary as an optional local implementation.
+6. Keep metadata filters focused on current fields such as `source` and `document_type`.
 
-## Interview Explanation
+## Engineering Explanation
 
 The important point is that retrieval quality must be measured separately from API correctness. In this project, `/retrieve` can run correctly while still returning weak evidence. I built a small evaluation set with expected anchors, recorded pass/partial/fail cases, and used the failure pattern to decide the next engineering step. The current evidence suggests rerank and better evaluation logic are more urgent than changing the API endpoint.

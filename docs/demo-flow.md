@@ -94,13 +94,14 @@ Call:
 POST /upload
 ```
 
-Upload a `.txt`, `.md`, or `.csv` file.
+Upload a `.txt`, `.md`, `.csv`, `.pdf`, or `.docx` file.
 
 Expected checks:
 
 - Response includes `document_id`.
 - Response includes `chunk_count`.
 - Uploaded content is parsed into text preview.
+- PDF and DOCX support is limited to machine-readable text; scanned PDF OCR is future work.
 
 ## 5. Retrieve
 
@@ -181,7 +182,7 @@ VECTOR_STORE_PROVIDER=sqlite
 
 - The default local path uses SQLite-backed vector storage, while Qdrant is available behind the VectorStore boundary.
 - Retrieval evaluation is small and anchor-based, with metrics such as Hit Rate@K, Recall@K, and MRR.
-- PDF and Word parsing are not fully implemented.
+- PDF and Word text extraction is supported for machine-readable documents; OCR for scanned PDFs is not implemented.
 - The project is single-user and does not include authentication or user-level data isolation.
 - Local LLM performance depends on laptop hardware.
 
