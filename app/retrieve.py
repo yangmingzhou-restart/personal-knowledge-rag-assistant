@@ -1,5 +1,11 @@
 import math
 
+from pydantic import BaseModel
+
+class RetrievalFilters(BaseModel):
+    source: str | None = None
+    document_type: str | None = None
+
 def cosine_similarity(left: list[float], right: list[float]) -> float:
     """
     left: list[float], the left vector
@@ -64,3 +70,22 @@ def rank_chunks_by_similarity(
 
     scored.sort(key=lambda item: item["score"], reverse=True)
     return scored[:top_k]
+
+
+def normalize_retrieval_filters(
+        filters: RetrievalFilters | None
+) -> dict | None:
+    """Convert optional API filter fields into a clean dict for vector search."""
+    if filters is None:
+        return None
+
+    normalized = {}
+    for key, value in filters.model_dump(exclude_none=True).items():
+        if isinstance(value, str):
+            value = value.strip()
+            # Swagger users may type Python-like None; treat it as no filter.
+            if value.lower() in {"", "none", "null"}:
+                continue
+        normalized[key] = value
+
+    return normalized or None

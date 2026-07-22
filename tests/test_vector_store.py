@@ -225,3 +225,37 @@ def test_qdrant_vector_store_search_returns_payload_with_score(monkeypatch):
             "score": 0.88,
         }
     ]
+
+
+def test_qdrant_vector_store_search_with_none_filters_only_filters_document_id(monkeypatch):
+    calls = {}
+
+    class FakeQdrantClient:
+        def __init__(self, url):
+            self.url = url
+
+        def collection_exists(self, collection_name):
+            return True
+
+        def query_points(self, **kwargs):
+            calls.update(kwargs)
+            return SimpleNamespace(points=[])
+
+    monkeypatch.setattr("qdrant_client.QdrantClient", FakeQdrantClient)
+
+    store = QdrantVectorStore(
+        url="http://127.0.0.1:6333",
+        collection_name="test_chunks",
+    )
+    matches = store.search(
+        document_id="doc_1",
+        query_embedding=[1.0, 0.0],
+        top_k=3,
+        filters=None,
+    )
+
+    filter_keys = {
+        condition.key for condition in calls["query_filter"].must
+    }
+    assert filter_keys == {"document_id"}
+    assert matches == []

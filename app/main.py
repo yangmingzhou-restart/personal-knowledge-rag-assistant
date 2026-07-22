@@ -16,13 +16,10 @@ from app.vector_store import get_vector_store
 from app.llm import LLMProviderError, load_ollama_model, unload_ollama_model, _llm_cache_flag
 from app.rerank import load_reranker_model, unload_reranker_model, get_reranker
 from app.config import settings
+from app.retrieve import RetrievalFilters, normalize_retrieval_filters
 
 
 DATABASE_PATH = settings.database_path
-
-class RetrievalFilters(BaseModel):
-    source: str | None = None
-    document_type: str | None = None
 
 class RetrievalRequest(BaseModel):
     document_id: str
@@ -113,11 +110,7 @@ def retrieve(request: RetrievalRequest) -> dict:
     query_embedding = embedding_provider.embed_text(request.question)
     vector_store = get_vector_store()
 
-    filters = (
-        request.filters.model_dump(exclude_none=True)
-        if request.filters is not None
-        else None
-    )
+    filters = normalize_retrieval_filters(request.filters)
 
     candidates_k = max(request.top_k*3, 10) # top_k -> candidate_k
     candidates = vector_store.search(

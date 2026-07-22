@@ -1,7 +1,18 @@
 from fastapi.testclient import TestClient
 
+from app.config import settings
+from app.embeddings import reset_embedding_provider_cache
 from app.main import app
+from app.rerank import reset_reranker_cache
 from app.retrieve import cosine_similarity, rank_chunks_by_similarity
+
+
+def use_fast_test_providers(monkeypatch):
+    monkeypatch.setattr(settings, "embedding_provider", "fake")
+    monkeypatch.setattr(settings, "reranker_provider", "keyword")
+    monkeypatch.setattr(settings, "vector_store_provider", "sqlite")
+    reset_embedding_provider_cache()
+    reset_reranker_cache()
 
 
 def test_cosine_similarity_returns_one_for_same_vector():
@@ -71,6 +82,59 @@ def test_retrieve_returns_matching_chunks():
     assert payload["document_id"] == document_id
     assert payload["question"] == "hello rag"
     assert payload["top_k"] == 2
+    assert len(payload["matches"]) >= 1
+
+
+def test_retrieve_accepts_null_filters(monkeypatch):
+    use_fast_test_providers(monkeypatch)
+    client = TestClient(app)
+    upload_response = client.post(
+        "/upload",
+        files={"file": ("hello.txt", b"hello rag retrieval", "text/plain")},
+    )
+    document_id = upload_response.json()["document_id"]
+
+    response = client.post(
+        "/retrieve",
+        json={
+            "document_id": document_id,
+            "question": "hello rag",
+            "top_k": 2,
+            "filters": None,
+        },
+    )
+
+    payload = response.json()
+
+    assert response.status_code == 200
+    assert len(payload["matches"]) >= 1
+
+
+def test_retrieve_treats_string_none_filters_as_unset(monkeypatch):
+    use_fast_test_providers(monkeypatch)
+    client = TestClient(app)
+    upload_response = client.post(
+        "/upload",
+        files={"file": ("hello.txt", b"hello rag retrieval", "text/plain")},
+    )
+    document_id = upload_response.json()["document_id"]
+
+    response = client.post(
+        "/retrieve",
+        json={
+            "document_id": document_id,
+            "question": "hello rag",
+            "top_k": 2,
+            "filters": {
+                "source": "None",
+                "document_type": "null",
+            },
+        },
+    )
+
+    payload = response.json()
+
+    assert response.status_code == 200
     assert len(payload["matches"]) >= 1
 
 
